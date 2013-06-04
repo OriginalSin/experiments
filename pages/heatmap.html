@@ -75,6 +75,13 @@ var items = 1;
 				}
 				
 			}, {asArray: true, ignoreVisibilityFilter: true})
+
+            var updateDate = function() {
+console.log('mapDrawDone');
+            }
+            
+            map.addListener('mapDrawDone', updateDate);
+
 			
 		}
 	}

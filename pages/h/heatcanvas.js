@@ -24,7 +24,7 @@
  * Heatmap api based on canvas
  *
  */
-var HeatCanvas = function(canvas){
+var HeatCanvas = function(canvas, layer){
     if (typeof(canvas) == "string") {
         this.canvas = document.getElementById(canvas);
     } else {
@@ -41,6 +41,7 @@ var HeatCanvas = function(canvas){
 
     this.onRenderingStart = null;
     this.onRenderingEnd = null;
+    this.layer = layer;
     
     this.data = {};
 };
@@ -73,7 +74,8 @@ HeatCanvas.prototype.render = function(step, degree, f_value_color){
         self._render(f_value_color);
         if (self.onRenderingEnd){
             self.onRenderingEnd();
-        }
+ //gmxAPI._leaflet['lastDrawTime'] = false;
+       }
     }
     var msg = {
         'data': self.data,
@@ -86,6 +88,7 @@ HeatCanvas.prototype.render = function(step, degree, f_value_color){
     this.worker.postMessage(msg);
     if (this.onRenderingStart){
         this.onRenderingStart();
+//gmxAPI._leaflet['lastDrawTime'] = true;
     }
 };
 
@@ -95,8 +98,10 @@ HeatCanvas.prototype._fireColor = function(value){
 };
 
 HeatCanvas.prototype._render = function(f_value_color){
+gmxAPI._leaflet['lastDrawTime'] = true;
     f_value_color = f_value_color || HeatCanvas.defaultValue2Color;
 
+this.layer._resetCanvasPosition();	
     var ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.width, this.height);
 
@@ -133,6 +138,7 @@ HeatCanvas.prototype._render = function(f_value_color){
         }
 
     ctx.putImageData(canvasData, 0, 0);
+gmxAPI._leaflet['lastDrawTime'] = false;
     
 };
 
@@ -140,7 +146,7 @@ HeatCanvas.prototype.clear = function(){
     this.data = {};
     this.value = {};
 	
-    this.canvas.getContext("2d").clearRect(0, 0, this.width, this.height);
+    //this.canvas.getContext("2d").clearRect(0, 0, this.width, this.height);
 };
 
 HeatCanvas.prototype.exportImage = function() {

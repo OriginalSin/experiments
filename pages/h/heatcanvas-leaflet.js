@@ -65,7 +65,7 @@ L.TileLayer.HeatCanvas = L.Class.extend({
         canv.style.opacity = this._opacity;
         container.appendChild(canv);
 
-        this.heatmap = new HeatCanvas(canv);
+        this.heatmap = new HeatCanvas(canv, this);
         this._div = container;
         this.map.getPanes().overlayPane.appendChild(this._div);
     },
@@ -75,16 +75,19 @@ L.TileLayer.HeatCanvas = L.Class.extend({
     },
     
     _resetCanvasPosition: function() {
+//gmxAPI._leaflet['lastDrawTime'] = true;
         var bounds = this.map.getBounds();
         var topLeft = this.map.latLngToLayerPoint(bounds.getNorthWest());
         //topLeft = this.map.layerPointToContainerPoint(topLeft);
 
         L.DomUtil.setPosition(this._div, topLeft);
+//delete gmxAPI._leaflet['lastDrawTime'];
     },
 
     _redraw: function() {
-        this._resetCanvasPosition();
-        this.heatmap.clear();
+//gmxAPI._leaflet['lastDrawTime'] = true;
+        //this._resetCanvasPosition();
+		this.heatmap.clear();
         if (this.data.length > 0) {
             for (var i=0, l=this.data.length; i<l; i++) {
                 var lonlat = new L.LatLng(this.data[i].lat, this.data[i].lon);
@@ -97,6 +100,7 @@ L.TileLayer.HeatCanvas = L.Class.extend({
             }
 
             this.heatmap.render(this._step, this._degree, this._colorscheme);
+//delete gmxAPI._leaflet['lastDrawTime'];
         }
         return this;
     }
