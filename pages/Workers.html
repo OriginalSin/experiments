@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<script src="http://localhost/api_worker/apil.js?key=U92596WMIH" charset="windows-1251"></script> 
+	<title>GeoMixer API - примеры использования</title>
+</head>
+<body>
+<div style="">
+Команды	API <button id="button0">testWorker</button>
+	<button id="button">navigator</button>
+	<button id="button5">location</button>
+	<button id="button2">setInterval</button>
+	<button id="button3">getBlobURL</button>
+	<button id="button1">terminate</button>
+	<button id="button4">loadMap</button>
+	<button id="button6">vectorData</button>
+	<br/>
+	<span id="res"></span>
+</div>
+	<br/>
+<div id="map_container" style="width: 800px; height: 650px; float: left;"></div> <!--задаем контейнер, в который загружается карта -->
+
+
+<script> 
+	createFlashMap(document.getElementById("map_container"), function(map)
+	{
+		map.moveTo(-74.111022, 40.650555, 7);
+
+var imageUrl = 'http://www.lib.utexas.edu/maps/historical/newark_nj_1922.jpg',
+    imageBounds = [[40.712216, -74.22655], [40.773941, -74.12544]];
+
+var imgOverlay = new L.GMXImageOverlay(imageUrl, imageBounds);
+gmxAPI._leaflet.LMap.addLayer(imgOverlay);		
+return;
+		var apiFolder = gmxAPI.getAPIFolderRoot(); 
+		var testWorker = null; 
+
+		var getBlobURL = (window.URL && URL.createObjectURL.bind(URL)) ||
+			(window.webkitURL && webkitURL.createObjectURL.bind(webkitURL)) ||
+			window.createObjectURL;
+	
+		var myLayer = null;
+		var res = document.getElementById("res");
+		
+		document.getElementById("button0").onclick = function()
+		{
+			if('_leaflet' in gmxAPI && 'addWorker' in gmxAPI._leaflet) {
+				testWorker = gmxAPI._leaflet.addWorker(apiFolder + "leaflet/ExternalVectorDataProvider.js"); 
+			}	
+		}
+		
+		document.getElementById("button").onclick = function()
+		{
+			//if(testWorker) {
+				testWorker.send({'cmd': 'navigator'}, function(ph) {
+					res.innerHTML = 'navigator: <b>' + ph + '</b>';
+					console.log('navigator__ ' , ph);
+				});
+			//}
+		}
+		document.getElementById("button5").onclick = function()
+		{
+			//if(testWorker) {
+				testWorker.send({'cmd': 'location'}, function(ph) {
+					res.innerHTML = 'location: <b>' + ph + '</b>';
+					console.log('location __ ' , ph);
+				});
+			//}
+		}
+		document.getElementById("button1").onclick = function()
+		{
+			if(testWorker) testWorker.terminate();
+		}
+		document.getElementById("button2").onclick = function()
+		{
+			//if(testWorker) {
+				testWorker.send({'cmd': 'interval'}, function(ph) {
+					res.innerHTML = 'setInterval: <b>' + ph + '</b>';
+					console.log('setInterval __ ' , ph);
+				}, {'notRemove': true});
+			//}
+		}
+		document.getElementById("button3").onclick = function()
+		{
+			//if(testWorker) {
+				testWorker.send({'cmd': 'getBlobURL'}, function(ph) {
+					res.innerHTML = 'getBlobURL: <b>' + ph + '</b>';
+					console.log('getBlobURL __ ' , ph);
+				});
+			//}
+		}
+		document.getElementById("button4").onclick = function()
+		{
+			//if(testWorker) {
+				var key = window.KOSMOSNIMKI_SESSION_KEY;
+				var hostName = 'maps.kosmosnimki.ru';
+				var mapName = 'UIRCQ';
+				var pt = {
+					'cmd': 'getMap'
+					,'hostName': hostName
+					,'mapName': mapName
+					,'key': key
+				};
+				testWorker.send(pt, function(ph) {
+					res.innerHTML = 'getMap: <b>' + ph + '</b>';
+					console.log('getMap __ ' , ph);
+				});
+			//}
+		}
+		document.getElementById("button6").onclick = function()
+		{
+			var curRes = {};
+			var hostName = 'maps.kosmosnimki.ru';
+			var mapName = 'UIRCQ';
+			//var layerTitle = 'test4List';
+			//var layerName = 'B0A30EF77D7F4182B302B9F7CB83CA25';	// test4List
+			var layerName = 'DF8D098FB3A44C4D8A76037D5FAC3A5C'; 	// Деревья в районе "Воробьевы горы - МГУ"
+			
+			var key = window.KOSMOSNIMKI_SESSION_KEY;
+			var mapSessionKey = ('sessionKeyCache' in window ? window.sessionKeyCache[mapName] : false);
+			var pt = {
+				'cmd': 'vectorData'
+				,'hostName': hostName
+				,'mapName': mapName
+				,'key': key
+				,'mapSessionKey': mapSessionKey
+				,'layerName': layerName
+				,'observeType': 'onVisible'
+				,'geomType': 'mercator'
+				,'currPosition': gmxAPI.currPosition
+			};
+			testWorker.send(pt, function(ph) {
+				//res.innerHTML = 'vectorData: <b>' + ph + '</b>';
+				var timeStamp = new Date().getTime();
+				for (var i = 0, len = ph.length; i < len; i++)
+				{
+					var item = ph[i];
+					var tid = item['tid'];
+					var onExtent = item['onExtent'];
+					if(onExtent) curRes[tid] = item;
+					else delete curRes[tid];
+				}
+				var cnt = 0;
+				for (var key in curRes)
+				{
+					cnt++;
+				}
+				console.log('vectorData __ ' , ph.length, cnt);
+				console.log('timeStamp __ ' , timeStamp - ph.timeStamp1, ph.timeStamp1 - ph.timeStamp);
+			}, {'notRemove': true});
+			var onMoveEnd = function(ph) {
+				var pt = {
+					'cmd': 'onMoveEnd'
+					,'extent': ph.attr.extent
+					,'z': ph.attr.z
+					,'x': ph.attr.x
+					,'y': ph.attr.y
+					,'mouseX': ph.attr.mouseX
+					,'mouseY': ph.attr.mouseY
+				};
+				testWorker.send(pt);
+				/*testWorker.send(pt, function(ph) {
+					var url = "http://" + ph['hostName'];
+					console.log('onMoveEnd __ ' , ph);
+				});*/
+			}
+			gmxAPI.map.addListener('onMoveEnd', onMoveEnd, 11);
+		}
+/*
+
+			map.loadMap("maps.kosmosnimki.ru", "CKELK", function()
+			{
+				//alert("Дополнительная карта добавлена!");
+			});
+
+    Объект navigator
+    Объект location (только чтение)
+    XMLHttpRequest
+    setTimeout()/clearTimeout() и setInterval()/clearInterval()
+    Кэш приложений
+    Импорт внешних скриптов с использованием метода importScripts()
+    Создание других объектов Web Worker
+		
+*/		
+	});
+</script> 
+
+</body>
+</html>
