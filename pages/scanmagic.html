@@ -1,0 +1,349 @@
+<!doctype html>
+<html>
+	<head>
+		<!--
+		Комментарии по использованию Geomixer API:
+		1) По какой-то причине первая навигация изредка не происходила. Кажется, это связано с задержками в отображении карты.
+		Кроме того при переходе на тестовую версию API (http://mapstest.kosmosnimki.ru/api/api.js) не происходило выбора первоначального типа отображения
+		Было решено первоначальную синхронизацию с коммуникатором выполнять не через 100, а через 1000 миллисекунд
+		2) Различие между переменными Scale и scale есть - таким образом мы обрабатываем нажатие на кнопку увеличения зума
+		не более одного раза.
+		3) Уровень самого низкого разрешения имеет размеры, вдвое большие, чем уровень самого низкого разрешения на всех других картсервисах
+		4) Callback загрузки kml всегда возвращает в качестве параметра result значение undefined. Исправить ошибку можно,
+		перейдя на тестовую версию API (http://mapstest.kosmosnimki.ru/api/api.js).
+		<script type="text/javascript" src="utilities.js"></script>
+		<script type="text/javascript" src="http://maps.kosmosnimki.ru/api/api.js?key=163F3B64157360FA7B6A2E4B71795CBA"></script>
+		-->
+		<link rel="stylesheet" href="style.css" type="text/css"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<script src="http://maps.kosmosnimki.ru/api/apil.js?key=U92596WMIH" charset="windows-1251"></script> 
+		<script type="text/javascript">
+		    var map = null;
+		    var mapPos = null;
+		    var MagicCommunicator = {
+				'GetNavLat': function() { return 45; }
+				,'GetNavLon': function() { return 55; }
+				,'GetNavScale': function() { return 7; }
+				,'SetNavLat': function() { return 45; }
+				,'SetNavLon': function() { return 55; }
+				,'SetNavScale': function() { return 7; }
+				,'SetCenter': function() { return 7; }
+				,'Trace': function() { return 7; }
+				,'GetVisualisationType': function() { return 1; }
+				,'GetPanUp': function() { return 1; }
+				,'SetPanUp': function() { return 1; }
+				,'GetPanDown': function() { return 1; }
+				,'SetPanDown': function() { return 1; }
+				,'GetPanLeft': function() { return 1; }
+				,'SetPanLeft': function() { return 1; }
+				,'GetPanRight': function() { return 1; }
+				,'SetPanRight': function() { return 1; }
+				,'SetOwnVisType': function() { return 1; }
+				,'GetShowDash': function() { return 1; }
+				,'GetShowScale': function() { return 1; }
+				,'GetShowType': function() { return 1; }
+				,'GetShowZoom': function() { return 1; }
+				,'GetVectorDelete': function() { return 1; }
+				,'GetVectorLink': function() { return 1; }
+			};
+
+			//navigation
+			var MoscowLon = 55.75294375419617;
+			var MoscowLat = 37.62039542198181;
+
+			var firstLat, firstLon;
+			var secondLat, secondLon;
+			var waitingForSecondPoint = false;
+			var polygon = null;
+
+		    if(!('VisualizationType' in window)) VisualizationType = {
+				SATELLITE: 1
+				,HYBRID: 2
+				,MAP: 3
+			}
+		    var VisType = VisualizationType.SATELLITE;
+		    var NavLat = 0;
+		    var NavLon = 0;
+		    var NavScale = 0;
+		    var ShowDash = 1;
+		    var ShowScale = 1;
+		    var ShowType = 1;
+		    var ShowPan = 1;
+		    var ShowZoom = 1;
+		    var OwnVisType = 0;
+
+		    var TraceX = 0;
+		    var TraceY = 0;
+
+			//draw fragment
+			var polygon = null;
+			var FragmentBorderLeft = 0;
+			var FragmentBorderRight = 0;
+			var FragmentBorderTop = 0;
+			var FragmentBorderBottom = 0;
+			var startPoint = null;
+			var endPoint = null;
+			var dragging = false;
+
+			//draw vector overlay
+			var VectorLayers = new Array();
+			var href = ('DEFAULT_KMLHREF' in window ? DEFAULT_KMLHREF : null);
+
+			var currentWorkingMode = ('WorkingMode' in window ? WorkingMode.NORMAL : null);
+
+			var distancePolyline;
+			
+			function onZoomCenterChanged(ph)//DS//bug 1516
+			{
+				mapPos = {
+					'z': ph.attr.z
+					,'lat': ph.attr.latlng.x
+					,'lon': ph.attr.latlng.y
+					,'mouseX': ph.attr.latlng.mouseX
+					,'mouseY': ph.attr.latlng.mouseY
+					,'visibleExtent': ph.attr.extent
+				}
+				var lat = mapPos.lat;
+				var lon = mapPos.lng;
+				var scale = mapPos.z;
+
+				if(!isNaN(lat))
+				{
+					NavLat = lat;
+					MagicCommunicator.SetNavLat(lat);
+				}
+				
+				if(!isNaN(lon))
+				{
+					NavLon = lon;
+					MagicCommunicator.SetNavLon(lon);
+				}
+				
+				if (!isNaN(scale))
+				{
+					NavScale = scale;
+					MagicCommunicator.SetNavScale(scale);
+				}
+				
+				MagicCommunicator.SetCenter(lat, lon, scale);
+			}		
+			
+			function onMouseMove(ph)
+			{
+				var TraceMapLon = ph.attr.latlng.lng;
+				var TraceMapLat = ph.attr.latlng.lat;
+				MagicCommunicator.Trace(TraceMapLat, TraceMapLon, TraceX, TraceY);
+			}
+			function cmdToJS()
+			{
+				var st = JSON.stringify(arguments);
+				alert(st);
+			}
+
+			function onLoad()
+			{
+				document.onmousemove = getMouseXY;
+				createFlashMap(document.getElementById("map"), 'maps.kosmosnimki.ru', '946GH', function(object)
+				{
+					MagicCommunicator = document.getElementById("MagicCommunicator");
+					MagicCommunicator.cmdToJS = cmdToJS;
+					map = object;
+					map.addListener("onMouseMove", onMouseMove);
+					map.setMode("satellite");
+					map.drawing.tools.setVisible(false);
+					map.addListener("onMoveEnd", onZoomCenterChanged);//DS//bug 1516 
+					//setTimeout(onClock, 1000);
+				});
+			}
+
+		    function getMouseXY(ev)
+			{
+				var event = gmxAPI.compatEvent(ev);
+		        TraceX = event.clientX;
+		        TraceY = event.clientY;
+		    }
+
+		    function onClock()
+			{
+				var lat = mapPos.lat;
+				var lon = mapPos.lng;
+				var scale = mapPos.z;
+
+				//visualization type
+				var CurrVisType = MagicCommunicator.GetVisualisationType();
+				if (CurrVisType != VisType)
+				{
+					VisType = CurrVisType;
+					switch (VisType)
+					{
+						case VisualizationType.SATELLITE:
+							map.setMode("satellite");
+							break;
+
+						case VisualizationType.HYBRID:
+							map.setMode("hybrid");
+							break;
+
+						case VisualizationType.MAP:
+							map.setMode("map");
+							break;
+					}
+				}
+
+				//navigation
+				var CurrLat = MagicCommunicator.GetNavLat();
+				var CurrLon = MagicCommunicator.GetNavLon();
+				var CurrScale = MagicCommunicator.GetNavScale();
+				if (CurrLat != NavLat || CurrLon != NavLon || NavScale != CurrScale)
+				{	
+					NavLat = CurrLat;
+					NavLon = CurrLon;
+					NavScale = CurrScale;
+					map.moveTo(NavLon, NavLat, NavScale - 1);
+					//setTimeout(map.checkMapSize, 500);
+				}
+
+				//pan
+				var ext = mapPos.visibleExtent;
+
+				var CurrFlag;
+				CurrFlag = MagicCommunicator.GetPanUp();
+				if (CurrFlag)
+				{	
+					map.slideTo(lon, ext.maxY, scale);
+					MagicCommunicator.SetPanUp(false);
+					setTimeout(onClock, 500);
+					return;
+				}
+
+				CurrFlag = MagicCommunicator.GetPanDown();
+				if (CurrFlag)
+				{	
+					map.slideTo(lon, ext.minY, scale);
+					MagicCommunicator.SetPanDown(false);
+					setTimeout(onClock, 500);
+					return;
+				}
+
+				CurrFlag = MagicCommunicator.GetPanLeft();
+				if (CurrFlag)
+				{	
+					map.slideTo(ext.minX, lat, scale);
+					MagicCommunicator.SetPanLeft(false);
+					setTimeout(onClock, 500);
+					return;
+				}
+
+				CurrFlag = MagicCommunicator.GetPanRight();
+				if (CurrFlag)
+				{	
+					map.slideTo(ext.maxX, lat, scale);
+					MagicCommunicator.SetPanRight(false);
+					setTimeout(onClock, 500);
+					return;
+				}
+
+				switch (map.getMode())
+				{
+					case "satellite":
+						CurrVisType = VisualizationType.SATELLITE;
+						break;
+
+					case "hybrid":
+						CurrVisType = VisualizationType.HYBRID;
+						break;
+
+					case "map":
+						CurrVisType = VisualizationType.MAP;
+						break;
+				}
+
+				if (CurrVisType != OwnVisType)
+				{
+					OwnVisType = CurrVisType;
+					MagicCommunicator.SetOwnVisType(OwnVisType);
+				}
+
+				var CurrFlag = MagicCommunicator.GetShowDash();
+				if (ShowDash != CurrFlag)
+				{
+					ShowDash = CurrFlag;
+					if(map.miniMap) map.miniMap.setVisible(ShowDash);
+				}
+
+				CurrFlag = MagicCommunicator.GetShowScale();
+				if (ShowScale != CurrFlag)
+				{
+					ShowScale = CurrFlag;
+					map.coordinates.setVisible(ShowScale);
+					map.scaleBar.setVisible(ShowScale);
+				}
+
+				CurrFlag = MagicCommunicator.GetShowType();
+				if (ShowType != CurrFlag)
+				{
+					ShowType = CurrFlag;
+					map.baseLayerControl.setVisible(ShowType);
+				}
+
+				CurrFlag = MagicCommunicator.GetShowZoom();
+				if (ShowZoom != CurrFlag)
+				{
+					ShowZoom = CurrFlag;
+					map.zoomControl.setVisible(ShowZoom);
+				}
+
+				CurrFlag = MagicCommunicator.GetVectorDelete();
+				MagicCommunicator.SetVectorDelete(false);
+				if (CurrFlag)
+				{
+					//removing all kml-layers
+					for (var kml in VectorLayers)
+						VectorLayers[kml].remove();
+
+					href = DEFAULT_KMLHREF;
+					VectorLayers = new Array();
+				}
+				else
+				{
+					var newHref = MagicCommunicator.GetVectorLink();
+					newHref = encodeURI(newHref);
+					if (href != newHref)
+					{
+						href = newHref;
+						var layer = map.addObject();
+						layer.loadKML(href, function(result)
+							{
+								/*
+								if (!result)
+									alert("KML file is invalid or web server works incorrectly");
+								*/
+							}
+						);
+						VectorLayers.push(layer);
+					}
+				}
+
+				//sending center coordinares and current zoom to ScanMagic
+				lon = map.getX();
+				lat = map.getY();
+				scale = map.getZ();
+
+				//if map is not displayed, this values might be NaN
+				if (isNaN(lat) || isNaN(lon) || isNaN(scale))
+				{
+				}
+				else
+				{
+					MagicCommunicator.SetCenter(lat, lon, scale + 1);
+				}
+
+				setTimeout(onClock, 100);
+		    }
+		</script>
+	</head>
+	<body onload="onLoad();">
+		<object classid="clsid:B3EDBD70-47AC-48DE-98D1-EDA7B70229F1" id="MagicCommunicator"></object>
+		<div id="map" style="height:800px"></div>
+	</body>
+</html>

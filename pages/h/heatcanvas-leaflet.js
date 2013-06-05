@@ -30,19 +30,19 @@ L.TileLayer.HeatCanvas = L.Class.extend({
     onAdd: function(map) {
         this.map = map;
         this._initHeatCanvas(this.map, this.heatCanvasOptions);
-        map.on("viewreset", this._redraw, this);
+        //map.on("viewreset", this._redraw, this);
         map.on("moveend", this._redraw, this);
-        map.on("dragend", this._redraw, this);
-        map.on("zoomend", this._redraw, this);
+        //map.on("dragend", this._redraw, this);
+        //map.on("zoomend", this._redraw, this);
         this._redraw();
     },
 
     onRemove: function(map) {
         map.getPanes().overlayPane.removeChild(this._div);
-        map.off("viewreset", this._redraw, this);
+       // map.off("viewreset", this._redraw, this);
         map.off("moveend", this._redraw, this);
-        map.off("dragend", this._redraw, this);
-        map.off("zoomend", this._redraw, this);
+        //map.off("dragend", this._redraw, this);
+       // map.off("zoomend", this._redraw, this);
     },
 
     _initHeatCanvas: function(map, options){
@@ -52,7 +52,7 @@ L.TileLayer.HeatCanvas = L.Class.extend({
         this._opacity = options.opacity || 0.6;
         this._colorscheme = options.colorscheme || null;
 
-        var container = L.DomUtil.create('div', 'leaflet-heatmap-container');
+        var container = L.DomUtil.create('div', 'leaflet-heatmap-container leaflet-zoom-hide');
         container.style.position = 'absolute';
         container.style.width = this.map.getSize().x+"px";
         container.style.height = this.map.getSize().y+"px";

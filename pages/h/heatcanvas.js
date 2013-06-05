@@ -64,6 +64,8 @@ HeatCanvas.prototype.push = function(x, y, data){
 };
 
 HeatCanvas.prototype.render = function(step, degree, f_value_color){
+	if(gmxAPI._leaflet['zoomstart']) return;
+	gmxAPI._leaflet.onRenderingStart(this);
     step = step || 1;
     degree = degree || HeatCanvas.LINEAR ;
 
@@ -85,6 +87,7 @@ HeatCanvas.prototype.render = function(step, degree, f_value_color){
         'degree': degree,
         'value': self.value
     };
+	
     this.worker.postMessage(msg);
     if (this.onRenderingStart){
         this.onRenderingStart();
@@ -98,10 +101,8 @@ HeatCanvas.prototype._fireColor = function(value){
 };
 
 HeatCanvas.prototype._render = function(f_value_color){
-gmxAPI._leaflet['lastDrawTime'] = true;
     f_value_color = f_value_color || HeatCanvas.defaultValue2Color;
 
-this.layer._resetCanvasPosition();	
     var ctx = this.canvas.getContext("2d");
     ctx.clearRect(0, 0, this.width, this.height);
 
@@ -138,7 +139,8 @@ this.layer._resetCanvasPosition();
         }
 
     ctx.putImageData(canvasData, 0, 0);
-gmxAPI._leaflet['lastDrawTime'] = false;
+this.layer._resetCanvasPosition();	
+	gmxAPI._leaflet.onRenderingEnd(this);
     
 };
 
