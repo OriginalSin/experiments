@@ -139,7 +139,7 @@ HeatCanvas.prototype._render = function(f_value_color){
         }
 
     ctx.putImageData(canvasData, 0, 0);
-this.layer._resetCanvasPosition();	
+	this.layer._resetCanvasPosition();
 	gmxAPI._leaflet.onRenderingEnd(this);
     
 };
