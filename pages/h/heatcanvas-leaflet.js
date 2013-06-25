@@ -73,6 +73,9 @@ L.TileLayer.HeatCanvas = L.Class.extend({
     pushData: function(lat, lon, value) {
         this.data.push({"lon":lon, "lat":lat, "v":value});
     },
+    removeData: function() {
+        this.data = [];
+    },
     
     _resetCanvasPosition: function() {
 //gmxAPI._leaflet['lastDrawTime'] = true;

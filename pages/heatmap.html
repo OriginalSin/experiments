@@ -36,12 +36,14 @@ createFlashMap(document.getElementById("map"), 'maps.kosmosnimki.ru', "NDFYK",
 		script.setAttribute("src", url);
 		document.getElementsByTagName("head").item(0).appendChild(script);
 		
-		map.moveTo(37.538566, 55.707754, 3); // перемещает карту в центр данного изображения
+		map.moveTo(37.538566, 55.707754, 1); // перемещает карту в центр данного изображения
 		//map.setMode("satellite");
 		var endDate = new Date();
+		var heatmap = null;
 
 		document.getElementById("button1").onclick = function()
 		{
+			heatmap.removeData();
 			endDate = new Date(endDate.getTime()  - 24*60*60000);
 			var begDate = new Date(endDate.getTime()  - 24*60*60000);
 			layer.setDateInterval(begDate, endDate);
@@ -56,7 +58,7 @@ createFlashMap(document.getElementById("map"), 'maps.kosmosnimki.ru', "NDFYK",
 			layer.setDateInterval(begDate, endDate);
 
 			//var heatmap = new L.TileLayer.HeatCanvas({zoomAnimation:true},{'step':0.02, 'degree':HeatCanvas.QUAD, 'opacity':0.5});
-			var heatmap = new L.TileLayer.HeatCanvas(null,{'step':0.02, 'degree':HeatCanvas.QUAD, 'opacity':0.5});
+			heatmap = new L.TileLayer.HeatCanvas(null,{'step':0.02, 'degree':HeatCanvas.QUAD, 'opacity':0.5});
 			var o = gmxAPI._leaflet.LMap.addLayer(heatmap); // добавляет объект на карту
 			
 			layer.addObserver(function(objs)
