@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<script src="http://localhost/api/apil.js?key=U92596WMIH" charset="windows-1251"></script> 
+	<title>GeoMixer API - примеры использования</title>
+</head>
+<body>
+<div style="">
+Команды	API 
+	<button id="button1">addObject</button>
+	<button id="button2">setStyle</button>
+	<button id="button3">setLabel</button>
+	<button id="button4">enableHoverBalloon</button>
+	<button id="button5">remove</button>
+	<button id="button6">setVisible</button>
+	<button id="button7">addObjects</button>
+	<br/>
+	<span id="res"></span>
+</div>
+	<br/>
+<div id="map_container" style="width: 800px; height: 650px; float: left;"></div> <!--задаем контейнер, в который загружается карта -->
+
+
+<script> 
+	createFlashMap(document.getElementById("map_container"), function(map)
+	{
+		map.moveTo(132.17102, 60.519149, 7);
+		var cont = map.addObject();
+		var menuItem = map.addContextMenuItem(
+			'test',
+			function(x, y)
+			{
+				console.log('x:', x, ' y:', y);
+				menuItem.remove();
+			}
+		);
+		
+		var myObj = null;
+		var	properties = {"name":"Регион"};
+		var	geo = {"type":"POINT","coordinates":[132.17102, 60.519149]};
+		var regStyle = { 
+			marker: { size: 20, dx: 0, dy: 0, center: true }
+			,label: { size: 12, color: 0xffffff, haloColor: 0xff0000, align: 'center' }
+			,fill: { color: 0x0000ff, opacity: 100 }
+			,outline: { color: 0xff0000, size: 14, thickness: 4, opacity: 100 } 
+		};
+		var hoverStyle = { 
+			marker: { size: 5 }
+			,fill: { color: 0xff0000, opacity: 80 }
+			,outline: { color: 0x000000, thickness: 2 } 
+		};
+		var label = '34'; 
+		var ballonTextFunc = function(o) {
+			return o.properties['name'];
+		};
+		
+		document.getElementById("button1").onclick = function()
+		{
+			myObj = cont.addObject(geo, properties);
+			var menuItem1 = cont.addContextMenuItem(
+				'test1',
+				function(x, y)
+				{
+					console.log('dddx:', x, ' y:', y);
+					menuItem1.remove();
+				}
+			);
+		}
+		
+		document.getElementById("button2").onclick = function()
+		{
+			if(myObj) myObj.setStyle(regStyle, hoverStyle);
+		}
+		document.getElementById("button3").onclick = function()
+		{
+			myObj.setLabel(label);
+		}
+		document.getElementById("button4").onclick = function()
+		{
+			myObj.enableHoverBalloon(ballonTextFunc);
+		}
+		document.getElementById("button5").onclick = function()
+		{
+			myObj.remove();
+		}
+		document.getElementById("button6").onclick = function()
+		{
+			myObj.setVisible(!myObj.isVisible);
+		}
+		document.getElementById("button7").onclick = function()
+		{
+			var data = [
+				{
+					'properties': properties
+					,'geometry': geo
+					,'setStyle': {'regularStyle': regStyle, 'hoveredStyle': hoverStyle}
+					,'setLabel': label
+					,'enableHoverBalloon': ballonTextFunc
+				}
+			];
+			var arr = cont.addObjects(data);
+			myObj = arr[0];
+		}
+		
+	});
+</script> 
+
+</body>
+</html>
