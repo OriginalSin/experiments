@@ -3192,12 +3192,17 @@ function createKosmosnimkiMapInternal(div, layers, callback)
 				);
 			}
 		}
-		gmxAPI.loadVariableFromScript(
-			gmxAPI.getAPIFolderRoot() + "config.js",
-			"gmxNullMap",
-			getBaseMap,
-			getBaseMap
-		);
+		if (!gmxAPI.getScriptURL("config.js"))
+		{
+			gmxAPI.loadVariableFromScript(
+				gmxAPI.getAPIFolderRoot() + "config.js",
+				"gmxNullMap",
+				getBaseMap,
+				getBaseMap
+			);
+		}
+		else
+			getBaseMap();
 	}
 	var errorConfig = function()
 	{
