@@ -1,0 +1,71 @@
+.leaflet-tile-container {
+	pointer-events: none;
+}
+/*
+.leaflet-overlay-pane svg {
+	pointer-events: none;
+}
+*/
+.leaflet-overlay-pane svg g {
+	pointer-events: auto;
+}
+.leaflet-tile {
+		position: absolute;
+}
+.leaflet-shadow-pane {
+    z-index: 3 !important;
+}
+.leaflet-overlay-pane {
+	z-index: 1000;
+}
+.leaflet-popup-pane {
+	z-index: 2000;
+}
+.leaflet-canvas-icon {
+}
+
+.my-div-icon {
+	color: white;
+	font-weight: bold;
+}
+
+.leaflet-marker-icon {
+	/*-moz-text-shadow: 1px 1px 1px #FFFFFF;
+	-webkit-text-shadow: 1px 1px 1px #FFFFFF;
+	text-shadow: 1px 1px 1px #FFFFFF;*/
+	/* For IE 8 
+	-ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=1, Direction=135, Color='#FFFFFF')";
+	*/
+	/* For IE 5.5 - 7 
+	filter: progid:DXImageTransform.Microsoft.Shadow(Strength=1, Direction=135, Color='#FFFFFF'); 
+	*/
+}
+/*
+@media print {
+	.leaflet-tile {
+		position: absolute;
+	}
+	.flashMap {
+		position: absolute !important;
+	}
+    .noPrint {
+        display:none;
+    }
+
+    .linkbutton {
+        display: none;
+        cursor: pointer;
+    }
+
+    @page rotated { size: landscape }
+
+    .mainmap {
+        width:840px;
+        height:600px;
+    }
+
+    div.spacer {
+        display:none;
+    }
+}
+*/
