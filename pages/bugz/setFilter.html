@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<script src="http://localhost/api/apil.js?key=U92596WMIH" charset="windows-1251"></script> 
+</head>
+<body>
+<div id="map" style="width: 800px; height: 600px; float: left;"></div> <!--задаем контейнер, в который загружается карта -->
+<div id="description" style="width: 400px; overflow: auto; padding-left: 20px;">
+<button id="setFilter">setFilter</button>
+</div>
+
+<script>
+
+createFlashMap(
+	document.getElementById("map"),
+	"maps.kosmosnimki.ru",
+	"ATTBP",
+	function(map)
+	{
+		window.globalFlashMap = map;
+		map.moveTo(61.764655, 65.488462, 3);
+		var myLayer = map.layers["OPERATIVE_MODIS_AQUA"];
+		//updateColors();
+		myLayer.setVisible(true);
+		document.getElementById("setFilter").onclick = function()
+		{
+			myLayer.filters[0].setFilter('`IsDay` = \'False\'');
+		}
+	}
+);
+
+function updateColors()
+{
+	var layer = globalFlashMap.layers["RegionsRF83_pop2"];
+	for (var i = 0; i < layer.filters.length; i++)
+		layer.filters[i].remove();
+	layer.filters = [];
+
+	var idx;
+	var opts = document.getElementById("colors").options;
+	for (var i = 0; i < opts.length; i++)
+		if (opts[i].selected)
+			idx = parseInt(opts[i].value);
+
+	var increment = [2000000, 10][idx];
+	var color = [0x0000ff, 0xff0000][idx];
+	var attrName = ["Численност", "Плотность"][idx];
+	var n = 8;
+	for (var i = 0; i <= n; i++)
+	{
+		var value = increment*i;
+		var sql = "`" + attrName + "` >= " + value;
+		if (i < n)
+			sql += " AND `" + attrName + "` < " + (value + increment);
+		var filter = layer.addObject();
+		filter.setZoomBounds(1, 21);
+		filter.setStyle(
+			{ 
+				fill: { color: color, opacity: 20 + 7*i },
+				outline: { color: 0x000000, thickness: 1, opacity: 20 } 
+			},
+			{ 
+				fill: { color: color, opacity: 20 + 10*i }, 
+				outline: { color: 0x000000, thickness: 1 } 
+			}
+		);
+		filter.setFilter(sql);
+		filter.enableHoverBalloon(function(o) { return o.properties["Регион"]; }, {'disableOnMouseOver': true});
+		layer.filters.push(filter);
+	}
+}
+
+</script>
+
+</body>
+</html>
