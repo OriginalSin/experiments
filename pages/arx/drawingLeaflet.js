@@ -223,6 +223,9 @@
 			layerItems[2].on('mousedown', function(e) {
 				if(attr['mousedown']) attr['mousedown'](e);
 			}, this);
+			layerItems[2].on('dblclick', function(e) {
+				if(attr['dblclick']) attr['dblclick'](e);
+			}, this);
 		}
 		layerGroup.bringToFront();
 		
@@ -1044,6 +1047,11 @@ console.log('dblclick1:  ', coords.length);
 console.log('dblclick2:  ', coords.length, downType.num);
 					
 				};
+				drawAttr['dblclick'] = function(e) {
+					var downType = getDownType(e, coords);
+console.log('____________:  ', coords.length, downType.num);
+					dblclick(downType);
+				}
 				var onFinish = function(downType)		// Удаление точки
 				{
 console.log('onFinish:  ', coords.length);
@@ -1100,18 +1108,18 @@ console.log('click0:  ', skipClick, isFinish);
 					}
 					mousePressed = false;
 					var downType = getDownType(e, coords);
-					
+/*					
 					var cTime = new Date().getTime();
 					clickArr.push(cTime);
 					if(clickArr.length > 1) {	// имитация dblclick
 						if(clickArr.length > 2) clickArr.shift();
 						if(clickArr[1] < clickArr[0] + 1000) {
-							dblclick(downType);
+							//dblclick(downType);
 							//if(attr['mouseUp']) attr['mouseUp']();
 //	L.DomEvent.stop(e.originalEvent);
 							return;
 						}
-					}
+					}*/
 					//if(cTime - downTime > 500) return;
 					gmxAPI._listeners.dispatchEvent('onClick', domObj, domObj);
 					gmxAPI._listeners.dispatchEvent('onClick', gmxAPI.map.drawing, domObj);
@@ -1406,6 +1414,8 @@ console.log('addDrawingItem:  ', coords.length, flag, lastPoint);
 					eventType = 'onFinish';
 					chkEvent(eventType);
 //					mouseOverFlag = true;
+						layerItems[1]._container.style.pointerEvents = 'visiblePainted';	// после onFinish без drag карты
+						layerItems[2]._container.style.pointerEvents = 'visiblePainted';
 					gmxAPI._drawing['activeState'] = false;
 					finishTime = new Date().getTime();
 					isFinish = true;
