@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Leaflet Quick Start Guide Example</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="http://leafletjs.com/dist/leaflet.css" />
+	<!--[if lte IE 8]><link rel="stylesheet" href="../dist/leaflet.ie.css" /><![endif]-->
+</head>
+<body>
+	<div id="map" style="width: 800px; height: 600px"></div>
+
+	<script src="http://leafletjs.com/dist/leaflet.js"></script>
+	<script>
+
+var getEquidistanceLine = function(points, d)
+{		// получить обрамление линии
+	var out = [];
+	if(points.length) {
+		var len = points.length;
+		for (var i = 0; i < len; i++) {
+			var A = points[i];		// Пусть очередная точка А имеет координаты (x1, y1),
+            if (i<len-1)
+    		    var B = points[i+1];
+            else
+    		    var B = points[0];
+            if (i>0)
+    		    var C = points[i-1];
+            else
+        		var C = points[len - 1];	// предыдущая точка C (x_2, y_2).
+            // следующая точка В (x2, y2)
+			//var dx = p1[0] - p[0];
+			//var dy = p1[1] - p[1];
+		    var dB = Math.sqrt((B[0]-A[0])*(B[0]-A[0]) + (B[1]-A[1])*(B[1]-A[1]));
+		    var dC = Math.sqrt((C[0]-A[0])*(C[0]-A[0]) + (C[1]-A[1])*(C[1]-A[1]));
+			var alpha = (C[0]-A[0])*(B[1]- A[1]) - (B[0]-A[0])*(C[1]-A[1]);
+			//if(d2 > 0) {
+				//var dp = d / Math.sqrt(d2);
+				if(alpha > 0) {
+					out.push([
+						((A[0] - C[0])*d/dB +(A[0]-B[0])*d/dC + A[0]*A[1]*(B[0] - C[0]) + A[0]*B[1]*(C[0] - A[0]) + A[0]*C[1]*(A[0] - C[0]))/alpha
+						,((A[1] - C[1])*d/dB +(A[1]-B[1])*d/dC + A[0]*A[1]*(C[1] - B[1]) + B[0]*A[1]*(A[1] - C[1]) + C[0]*A[1]*(B[1] - A[1]))/alpha
+					]);
+				} else {
+					out.push(
+						[A[0] - (B[1] - A[1])*d/dB, A[1] + (B[0] - A[0])*d/dB]	// от B' с координатами x1-(y2-y1)*s/dB, y1+(x2-x1)*s/dB
+						,[A[0] + (C[1] - A[1])*d/dC, A[1] - (C[0] - A[0])*d/dC]	// до C' с координатами x1+(y_2-y1)*s/dC, y1-(x_2-x1)*s/dC
+					);
+				}
+			//}
+		}
+	}
+	return out;
+}
+	
+
+var map = new L.map('map', {
+    //touchZoom: false,
+    scrollWheelZoom: true,
+    //doubleClickZoom: false,
+    boxZoom: false
+}).setView([42.685706, 27.679023], 8);
+		L.tileLayer('http://{s}.tile.cloudmade.com/BC9A493B41014CAABB98F0471D759707/997/256/{z}/{x}/{y}.png', {
+			maxZoom: 18,
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>'
+		}).addTo(map);
+		
+var style = {color: "#0000ff", fill: true, fillColor: "#0000ff", weight: 0, opacity: 1, fillOpacity: 1, 'pointSize': 3, clickable: true};
+var points = [
+	[42.485706, 27.479023] 
+	,[42.685706, 27.679023] 
+	,[42.385706, 27.579023] 
+//	,[42.485706, 27.479023] 
+];
+var lineRes = getEquidistanceLine(points, 0.05);
+var equidistanceLine = L.polyline(lineRes, {color: 'blue'});
+map.addLayer(equidistanceLine);
+
+var polyline = L.polyline(points, {color: 'red'});
+map.addLayer(polyline);
+
+/*
+		var myIcon = L.icon({
+			iconUrl: 'http://leafletjs.com/dist/images/marker-icon.png',
+			iconAnchor: new L.Point(0, 0)
+		});
+		
+		var latLng = new L.LatLng(55.18, 157.09);
+		var myMarker = new L.Marker(latLng, {icon: myIcon, draggable:true});
+		map.addLayer(myMarker);
+		//map.panTo(latLng);
+		
+		//L.marker([55.18, 157.09], {icon: myIcon, draggable:true}).addTo(map);
+			//.bindPopup("<b>Hello world!</b><br />I am a popup.").openPopup();
+
+		L.circle([51.508, -0.11], 500, {
+			color: 'red',
+			fillColor: '#f03',
+			fillOpacity: 0.5
+		}).addTo(map).bindPopup("I am a circle.");
+
+		L.polygon([
+			[51.509, -0.08],
+			[51.503, -0.06],
+			[51.51, -0.047]
+		]).addTo(map).bindPopup("I am a polygon.");
+
+
+		var popup = L.popup();
+
+		function onMapClick(e) {
+			popup
+				.setLatLng(e.latlng)
+				.setContent("You clicked the map at " + e.latlng.toString())
+				.openOn(map);
+		}
+
+		map.on('click', onMapClick);
+*/
+	</script>
+</body>
+</html>

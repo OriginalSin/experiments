@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>SVG Test</title>
+    <style type="text/css">
+      html {font:81.25%/1.5 sans-serif}
+    </style>
+  </head>
+  <body>
+    <h1>Testing <abbr>SVG</abbr></h1>
+	<div>
+		<button id="run">run</button>
+	</div>
+    <div id="container"/>
+    <script type="application/javascript">
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "1000px");
+        svg.setAttribute("height", "1000px");
+        svg.setAttribute("version", "1.1");
+
+var getEquidistanceLine = function(points, d)
+{		// получить обрамление линии
+	var out = [];
+	if(points.length) {
+		var len = points.length;
+		for (var i = 1; i < len; i++) {
+			var A = points[i];		// Пусть очередная точка А имеет координаты (x1, y1),
+			var B = points[(i<len-1 ? i : 0) +1]; // следующая точка В (x2, y2)
+
+			var C = points[i-1]; // предыдущая точка C (x_2, y_2).
+		    var dB = Math.sqrt((B[0]-A[0])*(B[0]-A[0]) + (B[1]-A[1])*(B[1]-A[1]));
+		    var dC = Math.sqrt((C[0]-A[0])*(C[0]-A[0]) + (C[1]-A[1])*(C[1]-A[1]));
+			var alpha = (C[0]-A[0])*(B[1]- A[1]) - (B[0]-A[0])*(C[1]-A[1]);
+				if(alpha < 0) {
+					out.push([ // A' с координатами
+						A[0] + ((A[0]-C[0])/dB + (A[0] - B[0])/dC)*d/alpha // x1+((x1-x_2)/dB+(x1-x2)/dC)*s/alpha
+						,A[1] + ((A[1]-C[1])/dB +(A[1]-B[1])/dC)*d/alpha   // y1+((y1-y_2)/dB+(y1-y2)/dC)*s/alpha
+					]);
+				} else {
+					out.push(
+						[A[0] + (C[1] - A[1])*d/dC, A[1] - (C[0] - A[0])*d/dC]	// до C' с координатами x1+(y_2-y1)*s/dC, y1-(x_2-x1)*s/dC
+						,[A[0] - (B[1] - A[1])*d/dB, A[1] + (B[0] - A[0])*d/dB]	// от B' с координатами x1-(y2-y1)*s/dB, y1+(x2-x1)*s/dB
+					);
+				}
+			//}
+		}
+	}
+	out.push(out[0]);
+	return out;
+}
+		
+var points = [
+	[42.485706, 27.479023] 
+	,[112.685706 + 200, 127.679023 + 200] 
+	,[242.385706 + 200, 47.579023 + 200] 
+	,[42.485706, 27.479023] 
+];
+	var newpath = document.createElementNS("http://www.w3.org/2000/svg", "path");  
+	newpath.setAttribute("id", "pathIdD");  
+	newpath.setAttribute("stroke", "red");  
+	newpath.setAttribute("stroke-width", 3);  
+	newpath.setAttribute("opacity", 1);  
+	newpath.setAttribute("fill", "none");
+	var str = 'M ' + points[0][0] + ',' + points[0][1] + ' ';
+	for (var i = 0, len = points.length; i < len; i++) {
+		var p = points[i];
+		str += ' L ' + p[0] + ',' + p[1];
+	 }
+	 newpath.setAttribute("d", str);  
+	svg.appendChild(newpath);
+	document.getElementById("container").appendChild(svg);
+
+document.getElementById("run").onclick = function()
+{
+	var pathIdD1 = document.getElementById("pathIdD1");
+	if(pathIdD1) pathIdD1.parentNode.removeNode(pathIdD1);
+/*
+*/	
+	var lineRes = getEquidistanceLine(points.reverse(), 22);
+	var newpath1 = document.createElementNS("http://www.w3.org/2000/svg", "path");  
+	newpath1.setAttribute("id", "pathIdD1");  
+	newpath1.setAttribute("stroke", "blue");  
+	newpath1.setAttribute("stroke-width", 3);  
+	newpath1.setAttribute("opacity", 1);  
+	newpath1.setAttribute("fill", "none");
+	var delta = 40;
+	var str = 'M ' + (lineRes[0][0] + delta) + ',' + (lineRes[0][1] + delta) + ' ';
+	for (var i = 0, len = lineRes.length; i < len; i++) {
+		var p = lineRes[i];
+		str += ' L ' + (p[0] + delta) + ',' + (p[1] + delta);
+	}
+	newpath1.setAttribute("d", str);  
+ //newpath.setAttribute("d", "M 1,97.857143 C 19.285714,96.428571 24.016862,131.64801 90.714286,132.85714 140.78762,133.7649 202.79376,66.16041 202.79376,66.16041");  
+    svg.appendChild(newpath1);
+
+}
+    </script>
+  </body>
+</html>
