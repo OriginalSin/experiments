@@ -35,41 +35,6 @@
 	var utils = {							// Утилиты leafletProxy
 		'DEFAULT_REPLACEMENT_COLOR': 0xff00ff		// marker.color который не приводит к замене цветов иконки
 		,
-		'getEquidistanceLine': function(points, d) {		// получить обрамление линии
-			var res = {'in': [], 'out': []};
-			if(points.length) {
-				var len = points.length;
-				var p = points[0];			// следующая точка В (x2, y2)
-				var c = points[len - 1];	// предыдущая точка C (x_2, y_2).
-				for (var i = 1; i < len; i++) {
-					var p1 = points[i];		// Пусть очередная точка А имеет координаты (x1, y1),
-					var dx = p1.x - p.x;
-					var dy = p1.y - p.y;
-					var d2 = dx*dx + dy*dy;
-					var alpha = dx*(c.y- p1.y) - dy*(c.x - p1.x);
-					if(d2 > 0) {
-						var dp = d / Math.sqrt(d2);
-						if(alpha < 0) {
-							res['out'].push([
-								[
-								((2*dx - c.x)*dp + p.y*p1.x*(c.x - p1.x) + c.y*p1.x*(p1.x - p.x) + p1.y*p1.x*(p.x - c.x))/alpha
-								,((2*p1.y - p.y - c.y)*dp + p.x*p1.y*(p1.y - c.y) + c.x*p1.y*(p.y - p1.y) + p1.x*p1.y*(c.y - p.y))/alpha
-								]
-							]);
-						} else {
-							res['out'].push([
-								[p1.y - c.y + c.x, c.x - p1.x + c.y]	// от C' с координатами (y1-y_2)+x_2, (x_2-1)+y_2
-								,[p1.y - p.y + p1.x, p.x - p1.x + p1.y]	// до B' с координатами (y1-y2)+x1, (x2-x1)+y1
-							]);
-						}
-					}
-					c = p;
-					p = p1;
-				}
-			}
-			return out;
-		}
-		,
 		'getEquidistancePolygon': function(points, d) {		// получить обрамление линии
 			var out = [];
 			if(points.length) {
