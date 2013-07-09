@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <head>
+    <title>SVG Test</title>
+    <style type="text/css">
+      html {font:81.25%/1.5 sans-serif}
+    </style>
+  </head>
+  <body>
+    <h1>Testing <abbr>SVG</abbr></h1>
+	<div>
+<svg version="1.1" height="500px" width="500px">
+ <path d="M 50,100 C 50,50 50,50 100,50 
+ 	 L 200,50 C 250,50 250,50 250,100
+ 	 L 250,200 C 250,250 250,250 200,250
+ 	 L 100,250 C 50,250 50,250 50,200
+ 	 L 50,100
+ "
+ 	 fill="none" opacity="1" stroke-width="3" stroke="red" id="tt">
+ </path>
+ </svg>
+ 		<button id="run">run</button>
+	</div>
+    <div id="container"/>
+    <script type="application/javascript">
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("width", "1000px");
+        svg.setAttribute("height", "1000px");
+        svg.setAttribute("version", "1.1");
+
+var getEquidistanceLine = function(points, d)
+{		// получить обрамление линии
+		// строит внешнюю эквидистанту
+	var out = [];
+	if(points.length) {
+		var len = points.length;
+		for (var i = 1; i < len; i++) {
+			var A = points[i];		// очередная точка А
+			var B = points[(i<len-1 ? i : 0) +1]; // следующая точка В
+			var C = points[i-1]; // предыдущая точка C
+			var dB = Math.sqrt((B[0]-A[0])*(B[0]-A[0]) + (B[1]-A[1])*(B[1]-A[1])); // длина отрезка AB
+			var dC = Math.sqrt((C[0]-A[0])*(C[0]-A[0]) + (C[1]-A[1])*(C[1]-A[1])); // длина отрезка AC
+			var alpha = (C[0]-A[0]) *(B[1]- A[1]) - (B[0]-A[0]) * (C[1]-A[1]);
+			if(alpha == 0) continue;
+			var x = A[0] + ((A[0]-C[0])*dB + (A[0]-B[0])*dC)*d/alpha; // x1+((x1-x_2)/dB+(x1-x2)/dC)*s/alpha
+			var y = A[1] + ((A[1]-C[1])*dB + (A[1]-B[1])*dC)*d/alpha;  // y1+((y1-y_2)/dB+(y1-y2)/dC)*s/alpha
+			if(alpha < 0) { // угол CAB острый
+				out.push([ // A' с координатами
+					x, y ,'L'
+				]);
+			} else { // угол CAB тупой
+				var p1 = [A[0] + (C[1] - A[1])*d/dC, A[1] - (C[0] - A[0])*d/dC, 'L'];
+				var p3 = [A[0] - (B[1] - A[1])*d/dB, A[1] + (B[0] - A[0])*d/dB, ''];
+				//var ua = (p3[0] - p1[0]
+				var p2 = [A[0] - (B[1] - A[1])*d/dB, A[1] + (B[0] - A[0])*d/dB, ''];
+				out.push( // дуга окружности с центром в точке A от точки C' до точки B' 
+				// SVG команда "квадратичная кривая Безье": P1 C P2 P3 P4, где
+				// P1 - первая точка
+				// P2 - первая контр. точка (вектор касательной в первой точке P1)
+				// P3 - вторая контр. точка (вектор касательной ко второй точке P4)
+				// P4 - вторая точка
+/*
+					[A[0] + (C[1] - A[1])*d/dC, A[1] - (C[0] - A[0])*d/dC, 'L']	// C' с координатами x1+(y_2-y1)*s/dC, y1-(x_2-x1)*s/dC
+					,[A[0] - B[0]*d/dB , A[1] - B[1]*d/dB, 'C']	// направление отрезка BA
+					,[A[0] - C[0]*d/dC , A[1] - C[1]*d/dC, '']	// направление отрезка CA
+					,[A[0] - (B[1] - A[1])*d/dB, A[1] + (B[0] - A[0])*d/dB, '']	// B' с координатами x1-(y2-y1)*s/dB, y1+(x2-x1)*s/dB
+*/
+					[A[0] + (C[1] - A[1])*d/dC, A[1] - (C[0] - A[0])*d/dC, 'L']	// C' с координатами x1+(y_2-y1)*s/dC, y1-(x_2-x1)*s/dC
+					,[x , y, 'Q']	// направление отрезка BA
+					,[A[0] - (B[1] - A[1])*d/dB, A[1] + (B[0] - A[0])*d/dB, '']	// B' с координатами x1-(y2-y1)*s/dB, y1+(x2-x1)*s/dB
+				);
+			}
+		}
+	}
+	out.push(out[0]);
+	return out;
+}
+		
+var points = [
+	[42, 27] 
+	,[112 + 150, 127 + 200] 
+	,[242 + 100, 47 + 120] 
+	//,[112 + 150, 127 + 200] 
+	,[42, 27] 
+];
+var points = [
+ [100, 200] 
+ ,[100, 100] 
+ ,[200, 100] 
+ ,[200, 200] 
+ ,[100, 200] 
+];
+	var newpath = document.createElementNS("http://www.w3.org/2000/svg", "path");  
+	newpath.setAttribute("id", "pathIdD");  
+	newpath.setAttribute("stroke", "red");  
+	newpath.setAttribute("stroke-width", 3);  
+	newpath.setAttribute("opacity", 1);  
+	newpath.setAttribute("fill", "none");
+	var str = 'M ' + points[0][0] + ',' + points[0][1] + ' ';
+	for (var i = 0, len = points.length; i < len; i++) {
+		var p = points[i];
+		str += ' ' + (p[2] ? p[2] : 'L') + ' ' + p[0] + ',' + p[1];
+	 }
+	 newpath.setAttribute("d", str);  
+	svg.appendChild(newpath);
+	document.getElementById("container").appendChild(svg);
+
+document.getElementById("run").onclick = function()
+{
+	var pathIdD1 = document.getElementById("pathIdD1");
+	if(pathIdD1) pathIdD1.parentNode.removeChild(pathIdD1);
+/*
+*/	
+	var lineRes = getEquidistanceLine(points.reverse(), 20);
+	//var lineRes = getEquidistanceLine(points, 22);
+	var newpath1 = document.createElementNS("http://www.w3.org/2000/svg", "path");  
+	newpath1.setAttribute("id", "pathIdD1");  
+	newpath1.setAttribute("stroke", "blue");  
+	newpath1.setAttribute("stroke-width", 3);  
+	newpath1.setAttribute("opacity", 1);  
+	newpath1.setAttribute("fill", "none");
+	var delta = 0;
+	var str = '';
+	for (var i = 0, len = lineRes.length; i < len; i++) {
+		var p = lineRes[i];
+		var cmd = (i === 0 ? 'M' : p[2]);
+		str += ' ' + cmd + ' ' + (p[0] + delta) + ',' + (p[1] + delta)
+	}
+	newpath1.setAttribute("d", str);  
+//newpath1.setAttribute("d", "M 1,97.857143 C 19.285714,96.428571 24.016862,131.64801 90.714286,132.85714 140.78762,133.7649 202.79376,66.16041 202.79376,66.16041");  
+    svg.appendChild(newpath1);
+/*	
+var shape = document.createElementNS("http://www.w3.org/2000/svg", "circle");  
+shape.setAttributeNS(null, "cx", 25);
+shape.setAttributeNS(null, "cy", 25);
+shape.setAttributeNS(null, "r",  20);
+shape.setAttributeNS(null, "fill", "green");	
+    svg.appendChild(shape);
+*/
+}
+    </script>
+  </body>
+</html>
