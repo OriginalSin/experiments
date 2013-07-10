@@ -1,4 +1,4 @@
-// Векторный слой
+// Плагин векторного слоя
 L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 {
 	_initContainer: function () {
@@ -13,6 +13,13 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 				,'mapName': options.mapName
 				,'layerName': options.layerName
 			};
+			this._map.on('zoomstart', function(e) {
+				options.gmx['zoomstart'] = true;
+			});
+			this._map.on('zoomend', function(e) {
+				options.gmx['zoomstart'] = false;
+			});
+			
 			gmxAPIutils.getSessionKey(
 				{
 					'url': "http://" + options.gmx.apikeyRequestHost + "/ApiKey.ashx?WrapStyle=None&Key=" + options.gmx.apiKey
@@ -33,61 +40,81 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 								options.gmx.properties = ph['properties'];
 								options.gmx.geometry = ph['geometry'];
 								options.gmx.attr = gmxAPIutils.prepareLayerBounds(ph);
-								console.log('getLayerPropreties: ' , options.gmx);
+								//console.log('getLayerPropreties: ' , options.gmx);
 								myLayer._update();
-/*
-								console.log('getLayerPropreties: ' , ph);
-								console.log('prepareLayerBounds: ' , res);
-								var oneDay = 1000*60*60*24;	// один день
-								var dt2 = new Date(new Date().getTime() + 3 * oneDay)
-								var dt1 = new Date(dt2.getTime() - 701 * oneDay)
-								var res1 = gmxAPIutils.getNeedTiles(res, dt1, dt2, res);
-								console.log('getNeedTiles: ' , res1);
-								var gmxTilePoint = {'z': 1, 'x': 0, 'y': 0};
-								//var gmxTilePoint = {'z': 17, 'x': 13670, 'y': 24422};
-								var cnt = gmxAPIutils.loadTile(res, gmxTilePoint, function(ph) {
-									console.log('loadTile: ' , ph);
-								});
-								console.log('loadTile cnt: ' , cnt);*/
 						});
-						
 					} else {
 						console.log('Error in getSessionKey: ' , ph);
 					}
 			});
 			
 		}
-console.log('_initContainer: ', this);
+		//console.log('_initContainer: ', this);
 	}
 	,
 	_addTile: function (tilePoint, container) {
-		//this.drawTile(null, tilePoint, this._map._zoom);
+		var myLayer = this, zoom = myLayer._map._zoom;
 		var gmx = this.options.gmx;
 		if(!gmx.attr) return;
 		if(!gmx.attr.tilesNeedLoad) {
 			var res = gmxAPIutils.getNeedTiles(gmx.attr);
 			gmx.attr.tilesNeedLoadCounts = res.tilesNeedLoadCounts;
 			gmx.attr.tilesNeedLoad = res.tilesNeedLoad;
-			console.log('getNeedTiles: ' , gmx);
+			gmx.attr.cntItems = 0;
+			//console.log('getNeedTiles: ' , gmx);
 		}
-		
-		var gmxTilePoint = gmxAPIutils.getTileNumFromLeaflet(tilePoint, this._map.getZoom());
+		var gmxTilePoint = gmxAPIutils.getTileNumFromLeaflet(tilePoint, zoom);
 		var cnt = gmxAPIutils.loadTile(gmx, gmxTilePoint, function(ph) {
-			console.log('loadTile: ' , ph);
+			var gmxTileKey = ph.gmxTileKey;
+			delete gmx.attr.tilesNeedLoad[gmxTileKey];
+			var cntItems = gmxAPIutils.parseTile(gmx, ph);
+			gmx.attr.cntItems += cntItems;
+			if(ph.cnt === 0) {
+				myLayer.gmxDrawTile(null, tilePoint, zoom);
+				//console.log('loadTile: ' , gmxTileKey, cntItems, ph.cnt);
+			}
 		});
-		console.log('loadTile cnt: ' , cnt);
-		
-						
-console.log('_addTile: ', gmxTilePoint, tilePoint);
+		if(cnt === 0) myLayer.gmxDrawTile(null, tilePoint, zoom);
+		//console.log('loadTile cnt: ' , gmxTilePoint, cnt);
 	}
 	,
-	drawTile: function (tile, tilePoint, zoom) {
-		// override with rendering code
-		var opt = this.options;
-console.log('drawTile: ', tilePoint);
+	gmxDrawTile: function (tile, tilePoint, zoom) {
+		var options = this.options;
+		var gmx = options.gmx;
+		if(gmx['zoomstart']) return;
+		var gmxTilePoint = gmxAPIutils.getTileNumFromLeaflet(tilePoint, zoom);
+		var arr = gmxAPIutils.getTileKeysIntersects(gmxTilePoint, gmx.attr['tilesAll']);
+		for (var i = 0, len = arr.length; i < len; i++) {
+			var key = arr[i];
+			var pt = gmx.attr['tilesAll'][key];
+			var data = pt['data'] || [];
+			if(data.length === 0) continue;
+			if(!tile) tile = this.gmxGetCanvasTile(tilePoint);
+console.log('drawTile: ', zoom, gmxTilePoint.gmxTileID, data.length, tilePoint);
+		}
 		//var node = mapNodes[opt['id']];
 		//if(!node) return;								// Слой пропал
 		//node['chkLoadTile'](tilePoint, zoom);
+	}
+	,
+	gmxGetCanvasTile: function (tilePoint) {
+		var tKey = tilePoint.x + ':' + tilePoint.y;
+		for(var key in this._tiles) {
+			if(key == tKey) return this._tiles[key];
+		}
+		var tile = this._getTile();
+		tile.id = tKey;
+		tile._layer = this;
+		tile._tilePoint = tilePoint;
+
+		this._tiles[tKey] = tile;
+		this._tileContainer.appendChild(tile);
+
+		var tilePos = this._getTilePos(tilePoint);
+		L.DomUtil.setPosition(tile, tilePos, L.Browser.chrome || L.Browser.android23);
+		//this._markTile(tilePoint, 1);
+
+		return this._tiles[tKey];
 	}
 /*
 	,
@@ -497,7 +524,7 @@ var gmxAPIutils = {
 	}
 	,
 	'prepareLayerBounds': function(layer) {					// построение списков тайлов
-		var res = {'tilesAll':{}, 'tileCounts':0};
+		var res = {'tilesAll':{}, 'items':{}, 'tileCounts':0};
 		var prop = layer.properties;
 		var geom = layer.geometry;
 		var type = prop['type'] + (prop['Temporal'] ? 'Temporal' : '');
@@ -647,53 +674,97 @@ var gmxAPIutils = {
 		if(x2 != tk1.x) return false;
 		var y2 = Math.floor(tk2.y * pz);
 		if(y2 != tk1.y) return false;
-console.log('isTileKeysIntersects: ' , tk1.x, x2 , tk1.y, y2);
+		//console.log('isTileKeysIntersects: ' , tk1.x, x2 , tk1.y, y2);
 		return true;
-	
-	
-	
-	
-		var x1 = tk1.x + (tk1.x < 0 ? 1 : 0);
-		var x2 = tk2.x + (tk2.x < 0 ? 1 : 0);
-		var pz = Math.pow(2, tk1.z - tk2.z);
-		var xx = parseInt(x2 * pz);
-		if(parseInt(x2 * pz) != x1) return false;
-		var y1 = tk1.y + (tk1.y < 0 ? 1 : 0);
-		var y2 = tk2.y + (tk2.y < 0 ? 1 : 0);
-		if(parseInt(y2 * pz) != y1) return false
-		return true;
-//console.log('drawTileID: ' , data);
+	}
+	,
+	'getTileKeysIntersects': function(gmxTilePoint, tilesAll) {	// получить список тайлов сервера пересекающих gmxTilePoint
+		var out = [];
+		for (var key in tilesAll) {
+			if(gmxAPIutils.isTileKeysIntersects(gmxTilePoint, tilesAll[key]['gmxTilePoint'])) {
+				out.push(key);
+			}
+		}
+		return out;
 	}
 	,
 	'loadTile': function(ph, gmxTilePoint, callback) {	// загрузить тайлы по отображаемому gmxTilePoint
-		//var drawTileID = gmxTilePoint.z + '_' + gmxTilePoint.x + '_' + gmxTilePoint.y;
-		var prefix = ph['tileSenderPrefix'] + '&ModeKey=tile&r=t';
-		prefix += "&MapName=" + ph['mapName'];
-		prefix += "&LayerName=" + ph['layerName'];
-
+		var prefix = '';
 		var cnt = 0;
-		for (var key in ph.attr['tilesNeedLoad']) {
-			var it = ph.attr['tilesAll'][key];
-//var flag = gmxAPIutils.isTileKeysIntersects({'z': 2, 'x': -2, 'y': 1}, {'z': 4, 'x': -5, 'y': 3});
-			var tp = it['gmxTilePoint'];
-			if(gmxAPIutils.isTileKeysIntersects(gmxTilePoint, tp)) {
-			//if(key.indexOf(drawTileID) === 0) {
-				var url = prefix + "&z=" + tp['z'];
-				url += "&x=" + tp['x'];
-				url += "&y=" + tp['y'];
-				url += "&v=" + tp['v'];
-				if(tp['d'] !== -1) url += "&Level=" + tp['d'] + "&Span=" + tp['s'];
-				cnt++;
-				gmxAPIutils.request({
-					'url': url
-					,'callback': function(st) {
-						cnt--;
-						callback({'cnt': cnt, 'data': JSON.parse(st)});
-						//console.log('drawTileID: ' , data);
+		var arr = gmxAPIutils.getTileKeysIntersects(gmxTilePoint, ph.attr['tilesAll']);
+		for (var i = 0, len = arr.length; i < len; i++) {
+			var key = arr[i];
+			if(key in ph.attr['tilesNeedLoad']) {
+				var it = ph.attr['tilesAll'][key];
+				var tp = it['gmxTilePoint'];
+				if(gmxAPIutils.isTileKeysIntersects(gmxTilePoint, tp)) {
+					if(!prefix) {
+						prefix = ph['tileSenderPrefix'] + '&ModeKey=tile&r=t';
+						prefix += "&MapName=" + ph['mapName'];
+						prefix += "&LayerName=" + ph['layerName'];
 					}
-				});
+					var url = prefix + "&z=" + tp['z'];
+					url += "&x=" + tp['x'];
+					url += "&y=" + tp['y'];
+					url += "&v=" + tp['v'];
+					if(tp['d'] !== -1) url += "&Level=" + tp['d'] + "&Span=" + tp['s'];
+					cnt++;
+					(function() {
+						var gmxTileKey = key;
+						gmxAPIutils.request({
+							'url': url
+							,'callback': function(st) {
+								cnt--;
+								callback({'cnt': cnt, 'gmxTileKey': gmxTileKey, 'data': JSON.parse(st)});
+								//console.log('drawTileID: ' , data);
+							}
+						});
+					})();
+				}
 			}
 		}
 		return cnt;
+	}
+	,
+	'parseTile': function(gmx, ph) {	// парсинг загруженного тайла
+		var gmxTileKey = ph.gmxTileKey;
+		var items = gmx.attr.items;
+		var layerProp = gmx.properties;
+		var identityField = layerProp.identityField || 'ogc_fid';
+		var data = ph.data;
+		for (var i = 0, len = ph.data.length; i < len; i++) {
+			var it = ph.data[i];
+			var prop = it['properties'];
+			delete it['properties'];
+			var geom = it['geometry'];
+			
+			var id = it['id'] || prop[identityField];
+			var propHiden = null;
+			var item = items[id];
+			if(item) {
+				if(item['type'].indexOf('MULTI') == -1) item['type'] = 'MULTI' + item['type'];
+			} else {
+				item = {
+					'id': id
+					,'type': geom['type']
+					,'properties': prop
+					,'propHiden': {
+						'fromTiles': {}
+					}
+				};
+				items[id] = item;
+			}
+			item['propHiden']['fromTiles'][gmxTileKey] = true;
+			if(prop.TemporalColumnName) {
+				var zn = prop[prop.TemporalColumnName] || '';
+				zn = zn.replace(/(\d+)\.(\d+)\.(\d+)/g, '$2/$3/$1');
+				var vDate = new Date(zn);
+				var offset = vDate.getTimezoneOffset();
+				var dt = Math.floor(vDate.getTime() / 1000  - offset*60);
+				item['propHiden']['unixTimeStamp'] = dt;
+			}
+		}
+		gmx.attr['tilesAll'][gmxTileKey]['data'] = ph.data;
+		return ph.data.length;
 	}
 }
