@@ -4332,7 +4332,8 @@
 			var chkClick = function(e) {		// Проверка click карты
 				if(gmxAPI._leaflet['contextMenu']['isActive']) return;	// мышка над пунктом contextMenu
 				var timeClick = new Date().getTime() - timeDown;
-				if(timeClick > 1000) return;
+//console.log('chkClick ', timeClick);
+				//if(timeClick > 1000) return;
 				var attr = parseEvent(e);
 				if(!attr) return;					// пропускаем при контекстном меню
 				//if(utils.chkClassName(e.originalEvent.originalTarget, 'gmx_balloon', LMap._container)) return;	// click на балуне
@@ -4345,12 +4346,14 @@
 				gmxAPI._leaflet['utils'].unfreeze();
 				var curTimeDown = new Date().getTime();
 				var timeClick = curTimeDown - timeDown;
-				if(!gmxAPI._drawing['activeState'] && timeClick < 200) { chkClick(e); timeDown = 0; }
+//console.log('mouseup ', timeClick);
+				//if(!gmxAPI._drawing['activeState'] && timeClick < 200) { chkClick(e); timeDown = 0; }
 				gmxAPI._leaflet['mousePressed'] = false;
 				gmxAPI._listeners.dispatchEvent('onMouseUp', gmxAPI.map, {'attr':{'latlng':e.latlng}});
 				//setTimeout(function() { skipClick = false;	}, 10);
 			});
 			var setMouseDown = function(e) {
+//console.log('mousedown ', e);
 				//console.log('setMouseDown ', gmxAPI._leaflet['activeObject']);
 				gmxAPI._leaflet['mousePressed'] = true;
 				timeDown = new Date().getTime();
@@ -4421,11 +4424,11 @@ var tt = 1;
 			var onMouseMoveTimer = null;
 			LMap.on('mousemove', function(e) {
 				gmxAPI._leaflet['isMouseOut'] = false;			// мышь на карте
-/*				if(LMap._pathRoot && !gmxAPI.isIE) {
+				if(LMap._pathRoot && !gmxAPI.isIE) {
 					if(!LMap._pathRoot.style.pointerEvents) {
 						LMap._pathRoot.style.pointerEvents = 'none';
 					}
-				}*/
+				}
 //return;
 				if(gmxAPI._mouseOnBalloon) {
 					if(LMap.scrollWheelZoom.enabled()) LMap.scrollWheelZoom.disable();
