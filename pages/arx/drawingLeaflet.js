@@ -1353,17 +1353,7 @@ console.log('contextmenu:  ', arguments);
 			if(gmxAPI.map.balloonClassObject) {
 				balloon = gmxAPI.map.balloonClassObject.addBalloon(true);	// Редактируемый балун (только скрывать)
 			}
-
-			zoomByID = gmxAPI.map.addListener('zoomBy', function() {
-				if(balloon.isVisible) gmxAPI.setVisible(balloon.outerDiv, false);
-			});
-			onMoveEndID = gmxAPI.map.addListener('onMoveEnd', function() {
-				if(balloon.isVisible) {
-					gmxAPI.setVisible(balloon.outerDiv, true);
-					balloon.reposition();
-				}
-				upCallback();
-			});
+			ret.balloon = balloon;
 
 			var updateDOM = function()
 			{
@@ -1371,7 +1361,6 @@ console.log('contextmenu:  ', arguments);
 				domObj.update({ type: "POINT", coordinates: [xx, yy] }, text);
 			}
 
-			ret.balloon = balloon;
 
 			var position = function(x, y)
 			{
@@ -1464,7 +1453,6 @@ console.log('contextmenu:  ', arguments);
 				chkEvent('onFinish');
 			}
 			
-			onZoomendID = gmxAPI._listeners.addListener({'eventName': 'onZoomend', 'func': upCallback });
 			obj.enableDragging(function(x, y, o, data)
 			{
 				dragCallback(x, y);
@@ -1569,6 +1557,18 @@ console.log('contextmenu:  ', arguments);
 
 			ret.setVisible(ret.isVisible);
 			chkEvent('onFinish');
+
+			zoomByID = gmxAPI.map.addListener('zoomBy', function() {
+				if(balloon.isVisible) gmxAPI.setVisible(balloon.outerDiv, false);
+			});
+			onMoveEndID = gmxAPI.map.addListener('onMoveEnd', function() {
+				if(balloon.isVisible) {
+					gmxAPI.setVisible(balloon.outerDiv, true);
+					balloon.reposition();
+				}
+				upCallback();
+			});
+			onZoomendID = gmxAPI._listeners.addListener({'eventName': 'onZoomend', 'func': upCallback });
 		}
 
 		if (!coords)

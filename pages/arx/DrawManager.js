@@ -49,8 +49,8 @@
 				var num = itemsHash[id];
 				if(num == 0) items.shift();
 				else {
-					var arr = items.slice(0, num - 1);
-					arr = arr.concat(items.slice(num));
+					var arr = items.slice(0, num);
+					arr = arr.concat(items.slice(num + 1));
 					items = arr;
 				}
 				delete itemsHash[id];
