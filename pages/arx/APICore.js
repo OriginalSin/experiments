@@ -28,11 +28,53 @@ var memoize = function(func)
 
 window.PI = 3.14159265358979; //устарело - обратная совместимость
 window.gmxAPI = {
+    mousePressed: false							// Флаг мышь нажата
+	,
     APILoaded: false							// Флаг возможности использования gmxAPI сторонними модулями
 	,
     initParams: null							// Параметры заданные при создании карты 
 	,
     buildGUID: [/*#buildinclude<__buildGUID__>*/][0]		// GUID текущей сборки
+	,
+	'getXmlHttp': function() {
+		var xmlhttp;
+		if (typeof XMLHttpRequest != 'undefined') {
+			xmlhttp = new XMLHttpRequest();
+		}
+		if (!xmlhttp) {
+			try {
+				xmlhttp = new ActiveXObject("Msxml2.XMLHTTP");
+			} catch (e) {
+				try {
+					xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+				} catch (E) {
+					xmlhttp = false;
+				}
+			}
+		}
+		return xmlhttp;
+	}
+	,
+	'request': function(ph) {	// {'type': 'GET|POST', 'url': 'string', 'callback': 'func'}
+	  try {
+		var xhr = gmxAPI.getXmlHttp();
+		xhr.withCredentials = true;
+		xhr.open((ph['type'] ? ph['type'] : 'GET'), ph['url'], true);
+		xhr.onreadystatechange = function() {
+			if (xhr.readyState == 4) {
+				if(xhr.status == 200) {
+					ph['callback'](xhr.responseText);
+					xhr = null;
+				}
+			}
+		};
+		xhr.send((ph['params'] ? ph['params'] : null));
+		return xhr.status;
+	  } catch (e) {
+		if(ph['onError']) ph['onError'](xhr.responseText);
+		return e.description; // turn all errors into empty results
+	  }
+	}
 	,
 	'createMap': function(div, ph)
 	{
@@ -889,14 +931,11 @@ window.gmxAPI = {
 	,
 	fragmentArea: function(points)
 	{
-		var pts = [];
-		for (var i in points)
-			pts.push([points[i][0], Math.sin(points[i][1]*Math.PI/180)]);
 		var area = 0;
-		for (var i in pts)
-		{
-			var ipp = (i == (pts.length - 1) ? 0 : (parseInt(i) + 1));
-			area += (pts[i][0]*pts[ipp][1] - pts[ipp][0]*pts[i][1]);
+		var rad = Math.PI/180;
+		for(var i=0, len = points.length; i<len; i++) {
+			var ipp = (i == (len - 1) ? 0 : i + 1);
+			area += points[i][0] * Math.sin(points[ipp][1]*rad) - points[ipp][0] * Math.sin(points[i][1]*rad);
 		}
 		var out = Math.abs(area*gmxAPI.lambertCoefX*gmxAPI.lambertCoefY/2);
 		return out;
@@ -905,8 +944,9 @@ window.gmxAPI = {
 	fragmentAreaMercator: function(points)
 	{
 		var pts = [];
-		for (var i in points)
+		for(var i=0, len = points.length; i<len; i++) {
 			pts.push([gmxAPI.from_merc_x(points[i][0]), gmxAPI.from_merc_y(points[i][1])]);
+		}
 		return gmxAPI.fragmentArea(pts);
 	}
 	,
@@ -2981,39 +3021,42 @@ function createKosmosnimkiMapInternal(div, layers, callback)
 					var obj = map.layers[i];
 					obj.setVisible(false);
 				}
-				var mapString = KOSMOSNIMKI_LOCALIZED("Карта", "Map");
-				var satelliteString = KOSMOSNIMKI_LOCALIZED("Снимки", "Satellite");
-				var hybridString = KOSMOSNIMKI_LOCALIZED("Гибрид", "Hybrid");
+				var mapString = gmxAPI.KOSMOSNIMKI_LOCALIZED("Карта", "Map");
+				var satelliteString = gmxAPI.KOSMOSNIMKI_LOCALIZED("Снимки", "Satellite");
+				var hybridString = gmxAPI.KOSMOSNIMKI_LOCALIZED("Гибрид", "Hybrid");
 
 				var baseLayerTypes = {
 					'map': {
-						'onClick': function() { gmxAPI.map.setBaseLayer(mapString); },
+						'onClick': function() { gmxAPI.map.setMode('map'); },
 						'onCancel': function() { gmxAPI.map.unSetBaseLayer(); },
 						'onmouseover': function() { this.style.color = "orange"; },
 						'onmouseout': function() { this.style.color = "white"; },
 						'backgroundColor': 0xffffff,
 						'alias': 'map',
-						'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Карта", "Map")
+						'lang': { 'ru': 'Карта', 'en': 'Map' },
+						'hint': mapString
 					}
 					,
 					'satellite': {
-						'onClick': function() { gmxAPI.map.setBaseLayer(satelliteString); },
+						'onClick': function() { gmxAPI.map.setMode('satellite'); },
 						'onCancel': function() { gmxAPI.map.unSetBaseLayer(); },
 						'onmouseover': function() { this.style.color = "orange"; },
 						'onmouseout': function() { this.style.color = "white"; },
 						'backgroundColor': 0x000001,
 						'alias': 'satellite',
-						'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Снимки", "Satellite")
+						'lang': { 'ru': 'Снимки', 'en': 'Satellite' },
+						'hint': satelliteString
 					}
 					,
 					'hybrid': {
-						'onClick': function() { gmxAPI.map.setBaseLayer(hybridString); },
+						'onClick': function() { gmxAPI.map.setMode('hybrid'); },
 						'onCancel': function() { gmxAPI.map.unSetBaseLayer(); },
 						'onmouseover': function() { this.style.color = "orange"; },
 						'onmouseout': function() { this.style.color = "white"; },
 						'backgroundColor': 0x000001,
 						'alias': 'hybrid',
-						'hint': gmxAPI.KOSMOSNIMKI_LOCALIZED("Гибрид", "Hybrid")
+						'lang': { 'ru': 'Гибрид', 'en': 'Hybrid' },
+						'hint': hybridString
 					}
 				};
 				

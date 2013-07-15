@@ -1825,7 +1825,7 @@
 			var geo = {};
 			if(ph.attr['geometry']) {
 				if(pt['propHiden']['isLayer']) {
-					geo = ph.attr['geometry'];
+					geo.coordinates = ph.attr['geometry'].coordinates;
 					geo.type = utils.fromScanexTypeGeo(geo.type);
 				} else {
 					geo = utils.parseGeometry(ph.attr['geometry']);
@@ -3279,7 +3279,6 @@
 		// Проверка размера точки по стилю
 		out['chkSize'] = function (node, style) {
 			var prop = ('getPropItem' in node ? node.getPropItem(out) : (out.geometry && out['properties'] ? out['properties'] : null));
-
 			var size = style['size'] || 4;
 			var scale = style['scale'] || 1;
 			if(!out['_cache']) out['_cache'] = {};
@@ -3287,6 +3286,7 @@
 			else {
 				if(typeof(scale) == 'string') {
 					scale = (style['scaleFunction'] ? style['scaleFunction'](prop) : 1);
+
 				}
 				if(scale < style['minScale']) scale = style['minScale'];
 				else if(scale > style['maxScale']) scale = style['maxScale'];
@@ -4241,7 +4241,7 @@
 					,attributionControl: false
 					,trackResize: true
 					,fadeAnimation: (window.gmxPhantom ? false : true)		// отключение fadeAnimation при запуске тестов
-					,zoomAnimation: (window.gmxPhantom ? false : true)		// отключение fadeAnimation при запуске тестов
+					,zoomAnimation: (window.gmxPhantom ? false : true)		// отключение zoomAnimation при запуске тестов
 					//,zoomAnimation: false
 					//,boxZoom: false
 					//,zoomAnimation: (gmxAPI.isChrome ? false : true)
@@ -4348,21 +4348,15 @@
 				var timeClick = curTimeDown - timeDown;
 //console.log('mouseup ', timeClick);
 				//if(!gmxAPI._drawing['activeState'] && timeClick < 200) { chkClick(e); timeDown = 0; }
-				gmxAPI._leaflet['mousePressed'] = false;
+				gmxAPI.mousePressed	= gmxAPI._leaflet['mousePressed'] = false;
 				gmxAPI._listeners.dispatchEvent('onMouseUp', gmxAPI.map, {'attr':{'latlng':e.latlng}});
 				//setTimeout(function() { skipClick = false;	}, 10);
 			});
 			var setMouseDown = function(e) {
-//console.log('mousedown ', e);
 				//console.log('setMouseDown ', gmxAPI._leaflet['activeObject']);
-				gmxAPI._leaflet['mousePressed'] = true;
+				gmxAPI.mousePressed	= gmxAPI._leaflet['mousePressed'] = true;
 				timeDown = new Date().getTime();
-/*				var standartTools = gmxAPI.map.standartTools;
-				if(standartTools && standartTools['activeToolName'] != 'move'
-					&& standartTools['activeToolName'] != 'FRAME'
-					//&& standartTools['activeToolName'] != 'circle'
-					) return;
-*/			
+
 				gmxAPI._leaflet['mousedown'] = true;
 				var node = mapNodes[gmxAPI._leaflet['activeObject'] || gmxAPI.map['objectId']];
 				if(node && node['dragMe']) {
@@ -4378,7 +4372,7 @@
 			};
 			LMap.on('mousedown', setMouseDown);
 			var setTouchStart = function(e) {
-				gmxAPI._leaflet['mousePressed'] = true;
+				gmxAPI.mousePressed	= gmxAPI._leaflet['mousePressed'] = true;
 				timeDown = new Date().getTime();
 
 				var parseTouchEvent = function(e) {		// Парсинг события мыши
@@ -4429,7 +4423,9 @@ var tt = 1;
 						LMap._pathRoot.style.pointerEvents = 'none';
 					}
 				}
-//return;
+				gmxAPI._leaflet['mousePixelPos'] = e.layerPoint;
+				gmxAPI._leaflet['containerPoint'] = e.containerPoint;
+
 				if(gmxAPI._mouseOnBalloon) {
 					if(LMap.scrollWheelZoom.enabled()) LMap.scrollWheelZoom.disable();
 					return null;
@@ -4781,6 +4777,55 @@ var tt = 1;
 					if(!this.options.skipSimplifyPoint) this._simplifyPoints();
 
 					L.Path.prototype._updatePath.call(this);
+				}
+			});
+
+			L.GMXClusterPoints = L.CircleMarker.extend({
+				getPathString: function () {
+					var p = this._point,
+						opt = this.options,
+						r = this._radius;
+
+					if (this._checkIfEmpty()) {
+						return '';
+					}
+
+					var out = '';
+					var points = opt.points;
+					for(var i=0, len = points.length; i<len; i++) {
+						var point = points[i];
+						var p1 = [point[0] + p.x, point[1] + p.y];
+						if (L.Browser.svg) {
+							out += "M" + p1[0] + "," + (p1[1] - r) +
+								   " A" + r + "," + r + ",0,1,1," +
+								   (p1[0] - 0.1) + "," + (p1[1] - r) + " ";
+						}
+					}
+					return out;
+				}
+			});
+
+			L.GMXClusterLines = L.CircleMarker.extend({
+				getPathString: function () {
+					var p = this._point,
+						opt = this.options,
+						r = this._radius;
+
+					if (this._checkIfEmpty()) {
+						return '';
+					}
+
+					var out = '';
+					p._round();
+					var points = opt.points;
+					for(var i=0, len = points.length; i<len; i++) {
+						var point = points[i];
+						var p1 = [point[0] + p.x, point[1] + p.y];
+						if (L.Browser.svg) {
+							out += "M" + p1[0] + "," + p1[1] + " L" + p.x + "," + p.y + " ";
+						}
+					}
+					return out;
 				}
 			});
 

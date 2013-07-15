@@ -205,6 +205,9 @@
 					//if(keyPress['objType'] == 'cluster') {}; // Надо придумать как бороться с фикс.двойником
 
 					var textFunc = chkAttr('callback', mapObject);			// Проверка наличия параметра callback по ветке родителей 
+					if(keyPress) {
+						if('textFunc' in keyPress) textFunc = keyPress['textFunc'];
+					}
 					//var text = (textFunc && (!keyPress['objType'] || keyPress['objType'] != 'cluster') ? textFunc(o, propsBalloon.div) : getDefaultBalloonText(o));
 					var text = (textFunc ? textFunc(o, propsBalloon.div) : getDefaultBalloonText(o));
 					if(typeof(text) == 'string' && text == '') return false;
@@ -259,7 +262,10 @@
 						return false;
 					}
 					if(!keyPress) keyPress = {};
-					if(keyPress['objType'] === 'cluster' && 'clusters' in o) keyPress['textFunc'] = o.clusters.getTextFunc();
+					if(keyPress['objType'] === 'cluster') {
+						if('clusters' in o) keyPress['textFunc'] = o.clusters.getTextFunc();
+						if(keyPress['members']) o['members'] = keyPress['members'];	// члены кластера 
+					}
 					if(!keyPress['textFunc']) keyPress['textFunc'] = chkAttr('callback', mapObject);			// Проверка наличия параметра callback по ветке родителей 
 					return clickBalloonFix(o, keyPress);
 				}
@@ -408,6 +414,7 @@
 				balloon.pID = o.parent.objectId;
 				balloon.obj = o;
 				balloon.fixedId = id;
+				balloon.keyPress = keyPress;
 				o.balloon = balloon;
 				if(keyPress && keyPress['objType']) balloon.objType = keyPress['objType'];
 
@@ -621,9 +628,9 @@
 				{
 					reposition();
 				},
-				updatePropsBalloon: function(text, pointerEvents)
+				updatePropsBalloon: function(text)
 				{
-					ret.outerDiv.style.pointerEvents = 'none';
+					//ret.outerDiv.style.pointerEvents = 'none';
 					updateVisible((text && !buttons ? true : false));
 					chkBalloonText(text, balloonText);
 					reposition();
@@ -713,73 +720,37 @@
 		var mouseMoveTimer = null;
 		var onmousemove = function(ev)
 		{
-			//if(!propsBalloon.isVisible()) return;
-			var event = gmxAPI.compatEvent(ev);
-			if(!event) return;
-			buttons = event.buttons;
-			var eventX = gmxAPI.eventX(event); 
-			var eventY = gmxAPI.eventY(event);
-			if(eventX == eventXprev && eventY == eventYprev) return;
-			eventXprev = eventX; 
-			eventYprev = eventY;
-			var px = eventX; 
-			var py = eventY;
-			if(gmxAPI.proxyType == 'flash') {
-				//if(!gmxAPI.contDivPos) {
-					gmxAPI.contDivPos = {
-						'x': gmxAPI.getOffsetLeft(div),
-						'y': gmxAPI.getOffsetTop(div)
-					};
-				//}
+			var px = 0;
+			var py = 0;
+			if(gmxAPI.proxyType === 'leaflet') {
+				px = gmxAPI._leaflet['containerPoint']['x'];
+				py = gmxAPI._leaflet['containerPoint']['y'];
 			} else {
-				/*if(gmxAPI.isChrome) {
-					gmxAPI.contDivPos = {
-						'x': div.offsetLeft,
-						'y': div.offsetTop
-					};
-					//px -= event.layerX; 
-					//py -= event.layerY;
-				} else {*/
-					gmxAPI.contDivPos = {
-						'x': gmxAPI.getOffsetLeft(div),
-						'y': gmxAPI.getOffsetTop(div)
-					};
-				//}
+				var event = gmxAPI.compatEvent(ev);
+				if(!event) return;
+				//buttons = event.buttons;
+				var eventX = gmxAPI.eventX(event);
+				var eventY = gmxAPI.eventY(event);
+				if(eventX == eventXprev && eventY == eventYprev) return;
+				eventXprev = eventX; 
+				eventYprev = eventY;
+				px = eventX;
+				py = eventY;
+				gmxAPI.contDivPos = {
+					'x': gmxAPI.getOffsetLeft(div),
+					'y': gmxAPI.getOffsetTop(div)
+				};
+				px -= gmxAPI.contDivPos['x']; 
+				py -= gmxAPI.contDivPos['y'];
 			}
-			px -= gmxAPI.contDivPos['x']; 
-			py -= gmxAPI.contDivPos['y'];
-/*
-*/
 			propsBalloon.setScreenPosition(px, py);
-/*
-			if(gmxAPI.proxyType == 'flash') {
-event.stopImmediatePropagation();
-				if (event.preventDefault)
-				{
-					event.stopPropagation();
-				}
-				else 
-				{
-					event.cancelBubble = true;
-				}
-			}
-*/
 		}
 
 		gmxAPI._div.onmousemove = function(ev)
 		{
+			if(gmxAPI.mousePressed) return;
 			onmousemove(ev);
-/*
-			if(mouseMoveTimer) clearTimeout(mouseMoveTimer);
-			mouseMoveTimer = setTimeout(function() {
-				onmousemove(ev);
-				mouseMoveTimer = null;
-			}, 0);
-*/
 		};
-		
-		//gmxAPI._div.onmousemove = onmousemove;
-		//new gmxAPI.GlobalHandlerMode("mousemove", onmousemove).set();
 		
 		gmxAPI.map.addListener('positionChanged', function(ph)
 			{
@@ -895,6 +866,10 @@ event.stopImmediatePropagation();
 					var x = div.clientWidth/2 - px + deltaX;
 					var y = div.clientHeight/2 + py;
 
+					if(balloon.keyPress) {	// если задано смещение в пикселах
+						if(balloon.keyPress.dx) x += balloon.keyPress.dx;
+						if(balloon.keyPress.dy) y += balloon.keyPress.dy;
+					}
 					/*if(balloon.fixedDeltaFlag) {
 						x += balloon.fixedDeltaX;
 						y -= balloon.fixedDeltaY;
