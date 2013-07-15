@@ -14,7 +14,6 @@
     <script type="text/javascript" src="http://www.jqwidgets.com/jquery-widgets-demo/jqwidgets/jqxgrid.js"></script>
     <script type="text/javascript" src="http://www.jqwidgets.com/jquery-widgets-demo/jqwidgets/jqxgrid.selection.js"></script>
     <script type="text/javascript" src="http://www.jqwidgets.com/jquery-widgets-demo/scripts/gettheme.js"></script>
-    <script type="text/javascript" src="generatedata.js"></script>
 <title>GeoMixer API - примеры использования</title>
 
 </head>
@@ -98,8 +97,8 @@
 					selectionmode: 'multiplecellsextended',
 					columns: columns
 				});
-				div.innerHTML = jqxgrid.innerHTML;
-				//if(jqxgrid) div.appendChild(jqxgrid);
+				//div.innerHTML = jqxgrid.innerHTML;
+				if(jqxgrid) div.appendChild(jqxgrid);
 				//jqxgrid = null;
 		
 		
