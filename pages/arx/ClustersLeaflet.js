@@ -131,7 +131,7 @@
 					clusterNum++;
 					pt['id'] = 'cl_' + clusterNum;
 					pt['subType'] = 'cluster';
-					pt.propHiden.curStyle = attr.regularStyle;
+					//pt.propHiden.curStyle = attr.regularStyle;
 					pt.propHiden.toFilters = node.filters;
 					prop[identityField] = pt['id'];
 				}
@@ -169,7 +169,7 @@
 						clusterNum++;
 						pt['id'] = 'cl_' + clusterNum;
 						pt['subType'] = 'cluster';
-						pt.propHiden.curStyle = attr.regularStyle;
+						//pt.propHiden.curStyle = attr.regularStyle;
 						pt.propHiden.toFilters = node.filters;
 						prop[identityField] = pt['id'];
 					}
@@ -225,9 +225,12 @@
 					geo.propHiden = item.propHiden;
 					geo.propHiden['tileID'] = tileAttr['drawTileID'];
 					geo.propHiden['fromTiles'] = {};
+					var style = utils.evalStyle(attr.regularStyle, geo.properties);
+					geo.propHiden['curStyle'] = style;
+					geo['chkSize'](node, style);
 
 					if(!item['_cache'] || !item['_cache']['extentLabel']) {
-						var style = item.propHiden.curStyle;
+						//var style = item.propHiden.curStyle;
 						if(style && style['label']) {
 							var labelStyle = style['label'];
 							var txt = (labelStyle['field'] ? item.properties[labelStyle['field']] : labelStyle['value']) || '';
@@ -248,12 +251,123 @@
 			return res;
 		}
 		,'viewClusterItem': function(item)	{			// Показать содержимое кластера
+			var geom = item['geom'];					// геометрия кластера
+			var node = item.attr['node'];				// лефлет нода слоя
+			
+			var point = geom.coordinates;
+			var center = [gmxAPI.from_merc_y(point.y), gmxAPI.from_merc_x(point.x)];
+			var members = geom.propHiden._members;
+			
+			var vattr = node.clustersData.input.clusterView;
+			var rad = vattr.radius;
+			var rad2 = rad * rad;
+			var pr = 5;
+			var pr2 = pr * pr;
+			var rad1 = rad - pr - 5;
+			var deltaAlpha = 2*Math.PI/members.length;
+			var points = [];
+			for(var i=0, len = members.length; i<len; i++) {	// Подготовка геометрий
+ 				var idelta = i * deltaAlpha;
+				var coord = [Math.floor(rad1 * Math.cos(idelta)), Math.floor(rad1 * Math.sin(idelta))];
+				points.push(coord);
+			}
+			var opt = {
+				clickable: true
+				,'radius': pr
+				,'points': points
+				,'fillOpacity': 0.8
+			};
+			var onMouseOut = function() {
+				if(itemBalloon) node['itemBalloon'](itemBalloon, {'evName':'onMouseOut', 'objType':'cluster'});
+				itemBalloon = null;
+			}
+			var chkRemove = function() {
+				if(node['GMXClusterPoints']) {
+					LMap.removeLayer(node['GMXClusterPoints']);
+					node['GMXClusterPoints'] = null;
+					gmxAPI._listeners.dispatchEvent('hideBalloons', gmxAPI.map, {});	// Скрыть балуны
+				}
+				onMouseOut();
+			}
+			chkRemove();
+			LMap.on('zoomstart', function(e) {
+				chkRemove();
+			});
+			var GMXClusterPoints = new L.FeatureGroup([]);
+			var bgItem = new L.CircleMarker(center, {'radius': rad,'fillColor': 'red','opacity': 0,'fillOpacity': 0.2, clickable: true});
+			GMXClusterPoints.addLayer(bgItem);
+			var GMXClusterLines = new L.GMXClusterLines(center, {'points': points, 'radius': rad, 'dashArray': '3,3','color': 'red','opacity': 1, clickable: false});
+			GMXClusterPoints.addLayer(GMXClusterLines);
+			
+			var items = new L.GMXClusterPoints(center, opt);
+			GMXClusterPoints.addLayer(items);
+			
+			node['GMXClusterPoints'] = GMXClusterPoints;
+			LMap.addLayer(GMXClusterPoints);
+
+			var itemBalloon = null;
+			bgItem.on('mouseout', function(e) {
+				var p1 = e.layerPoint;
+				var p2 = e.layer._point;
+				var dx = (p1.x - p2.x);
+				var dy = (p1.y - p2.y);
+				var delta = dx * dx + dy * dy;
+				if(delta > rad2) {
+					chkRemove();
+					//gmxAPI._listeners.dispatchEvent('hideBalloons', gmxAPI.map, {});	// Скрыть балуны
+					itemBalloon = null;
+				}
+			});
+			GMXClusterPoints.on('mousemove', function(e) {
+				var p1 = e.layerPoint;
+				var p2 = e.layer._point;
+				var p3 = [p1.x - p2.x, p1.y - p2.y];
+				var cursor = 'default';
+				for(var i=0, len = points.length; i<len; i++) {
+					var p4 = points[i];
+					var dx = (p3[0] - p4[0]);
+					var dy = (p3[1] - p4[1]);
+					var delta = dx * dx + dy * dy;
+					if(delta < pr2) {
+						cursor = 'pointer';
+						if(!itemBalloon) chkBalloon(p1, p2, 'onMouseOver');
+						itemBalloon = members[i];
+						break;
+					}
+				}
+				var cont = e.layer._path;
+				if(cursor != cont.style.cursor) cont.style.cursor = cursor;
+			});
+			var chkBalloon = function(p1, p2, evName) {
+				var p3 = [p1.x - p2.x, p1.y - p2.y];
+				if(!evName) evName = 'onMouseOver';
+				for(var i=0, len = points.length; i<len; i++) {
+					var p4 = points[i];
+					var dx = (p3[0] - p4[0]);
+					var dy = (p3[1] - p4[1]);
+					var delta = dx * dx + dy * dy;
+					if(delta < pr2) {
+						itemBalloon = members[i];
+						node['itemBalloon'](itemBalloon, {'evName':evName, 'objType':'cluster', 'dx': p3[0], 'dy': p3[1]});
+						break;
+					}
+				}
+			};
+
+			items.on('mouseout', function(e) {
+				onMouseOut();
+			});
+			items.on('click', function(e) {
+				var p1 = e.layerPoint;
+				var p2 = e.layer._point;
+				chkBalloon(p1, p2, 'onClick');
+			});
 			//console.log('setClustersLayer ', item);
 		}
 		,'setClusters': function(ph, id)	{			// Добавить кластеризацию к векторному слою
 			//console.log('setClustersLayer ', id , ph);
 			if(!mapNodes) init()						// инициализация
-			var node = mapNodes[id];						// лефлет нода слоя
+			var node = mapNodes[id];					// лефлет нода слоя
 			if(node['type'] == 'filter') {				// через фильтр
 				node = mapNodes[node.parentId];
 			}
@@ -272,8 +386,8 @@
 					var propHiden = item.geom.propHiden;
 					
 					if(propHiden['_members'].length < clusterView['maxMembers']) {
-						//ClustersLeaflet.viewClusterItem(item);
-						//return true;
+						ClustersLeaflet.viewClusterItem(item);
+						return true;
 					}
 					return false;
 				}
@@ -285,9 +399,9 @@
 			gmxAPI._listeners.addListener({'level': 11, 'eventName': 'onIconLoaded', 'func': function(eID) {	// проверка загрузки иконок
 				if(eID.indexOf('_clusters')) {
 					if(eID == layerID + '_regularStyle_clusters') {
-						out.regularStyle['ready'] = true;
+						out.regularStyle['iconLoaded'] = true;
 					} else if(eID == layerID + '_hoveredStyle_clusters') {
-						out.hoveredStyle['ready'] = true;
+						out.hoveredStyle['iconLoaded'] = true;
 					}
 				}
 			}});

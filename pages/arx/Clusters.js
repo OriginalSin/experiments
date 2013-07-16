@@ -56,10 +56,15 @@
 	Clusters.prototype = {
 		'_chkToFlash':	function() {
 			if(this._attr.visible && this._parent) gmxAPI._cmdProxy('setClusters', { 'obj': this._parent, 'attr': this._attr });
-		},
+		}
+		,
+		'setClustersBalloon':	function(func) {
+			this.textFunc = func;
+		}
+		,
 		'getTextFunc':	function() {
 			var me = this;
-			return function(o)
+			return this.textFunc || function(o, div)
 			{
 				var text = "";
 				var nProp = me.getProperties();

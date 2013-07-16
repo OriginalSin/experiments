@@ -24,33 +24,65 @@
 		{
 			var src = srcArr[i] + '&r=t';
 			itemsHash[src] = item;
-			(function() {						
+			(function() {
 				var psrc = src;
-				gmxAPI.sendCrossDomainJSONRequest(psrc, function(response)
-				{
-					//delete node['tilesLoadProgress'][psrc];
-					counts--;
-					if(itemsHash[psrc]) {
-						if(itemsHash[psrc]['skip']) {
+				if(gmxAPI.isIE || gmxAPI.isSafari) {
+					gmxAPI.sendCrossDomainJSONRequest(psrc, function(response)
+					{
+						//delete node['tilesLoadProgress'][psrc];
+						counts--;
+						if(itemsHash[psrc]) {
+							if(itemsHash[psrc]['skip']) {
+								delete itemsHash[psrc];
+								return;
+							}
 							delete itemsHash[psrc];
-							return;
 						}
-						delete itemsHash[psrc];
-					}
 
-					if(typeof(response) != 'object' || response['Status'] != 'ok') {
+						if(typeof(response) != 'object' || response['Status'] != 'ok') {
+							onerror({'url': psrc, 'Error': 'bad vector tile response'})
+							//return;
+						}
+						if(response['Result'] && response['Result'].length)	needParse = needParse.concat(response['Result']);
+						if(counts < 1) {
+							callback(needParse, psrc);
+							needParse = [];
+							response = null;
+							item = null;
+						}
+					}
+					, ''
+					, function() {
 						onerror({'url': psrc, 'Error': 'bad vector tile response'})
-						//return;
 					}
-					if(response['Result'] && response['Result'].length)	needParse = needParse.concat(response['Result']);
-					if(counts < 1) {
-						callback(needParse);
-//console.log('needParse ', tID, needParse.length);
-						needParse = [];
-						response = null;
-						item = null;
-					}
-				});
+					);
+				} else {
+					gmxAPI.request({
+						'url': psrc
+						,'callback': function(st) {
+							var response = JSON.parse(st);
+							counts--;
+							if(itemsHash[psrc]) {
+								if(itemsHash[psrc]['skip']) {
+									delete itemsHash[psrc];
+									return;
+								}
+								delete itemsHash[psrc];
+							}
+
+							if(response.length)	needParse = needParse.concat(response);
+							if(counts < 1) {
+								callback(needParse, psrc);
+								needParse = [];
+								response = null;
+								item = null;
+							}
+						}
+						,'onError': function(st) {
+							onerror({'url': psrc, 'Error': 'bad vector tile response'})
+						}
+					});
+				}
 			})();
 		}
 	}

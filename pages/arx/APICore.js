@@ -525,6 +525,16 @@ window.gmxAPI = {
 		return ret;
 	}
 	,
+	getTileExtent: function(x, y, z)	// получить extent тайла
+	{
+		var pz = Math.pow(2, z);
+		var tileSize = 256 * 156543.033928041 / pz;
+		var minx = x * tileSize;
+		var miny = y * tileSize;
+		var ext = gmxAPI.getBounds([[minx, miny], [minx + tileSize, miny + tileSize]]);
+		return ext;
+	}
+	,
 	boundsIntersect: function(b1, b2)	// в api.js не используется
 	{
 		return ((b1.minX < b2.maxX) && (b1.minY < b2.maxY) && (b2.minX < b1.maxX) && (b2.minY < b1.maxY));

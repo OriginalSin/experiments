@@ -162,6 +162,22 @@
 			return toolHash[tn];
 		}
 		this.getToolByName = getToolByName;
+
+		function getAliasByName(tn)
+		{
+			for (var key in toolHash) {
+				var tool = toolHash[key];
+				var alias = tool['alias'] || key;
+				if(alias === tn) return alias;
+				else if(tool['lang']) {
+					for (var lang in tool['lang']) {
+						if(tool['lang'][lang] === tn) return alias;
+					}
+				}
+			}
+			return null;
+		}
+		this.getAliasByName = getAliasByName;
 		
 		function setVisible(flag)
 		{
@@ -228,9 +244,11 @@
 				title: attr['hint'],
 				onclick: function() { selectTool(tn); }
 			};
-			if(attr['alias']) {
-				aliasNames[attr['alias']] = tn;
-			}
+			if(!attr['alias']) attr['alias'] = tn
+			aliasNames[attr['alias']] = tn;
+
+			if(!('onClick' in attr)) attr['onClick'] = function() { gmxAPI.map.setMode(tn); };
+			if(!('onCancel' in attr)) attr['onCancel'] = function() { gmxAPI.map.unSetBaseLayer(); };
 			
 			var setStyle = function(elem, style) {
 				for (var key in style)
@@ -265,6 +283,8 @@
 
 			toolHash[tn] = {
 				key: tn,
+				alias: attr['alias'] || null,
+				lang: attr['lang'] || null,
 				backgroundColor: attr['backgroundColor'],
 				isActive: false,
 				isVisible: true,
