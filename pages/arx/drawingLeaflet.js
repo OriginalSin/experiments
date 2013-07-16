@@ -138,6 +138,14 @@
 				break;
 			}
 		}
+		if(ph.target) {
+			out['evID'] = ph.target._leaflet_id;
+			out['_gmxNodeID'] = ph.target._gmxNodeID;
+			out['_gmxDrawItemID'] = ph.target._gmxDrawItemID;
+		}
+		if(ph.originalEvent) {
+			out['button'] = ph.originalEvent.buttons || ph.originalEvent.button;
+		}
 		return out;
 	}
 
@@ -215,6 +223,10 @@
 			layerItems[0]._container.style.pointerEvents = 'none';
 			layerItems[1]._container.style.pointerEvents = (!attr['isExternal'] && attr['editType'] !== 'FRAME' ? 'none':'visiblePainted');
 			if(attr['isExternal'] && attr['editType'] === 'LINESTRING') layerItems[2].options['skipLastPoint'] = false;
+			// _gmxDrawItemID - идентификатор члена drawing объекта
+			layerItems[1]._gmxDrawItemID = layerItems[2]._gmxDrawItemID = layerGroup._gmxDrawItemID = layerGroup._leaflet_id;
+			// _gmxNodeID - идентификатор ноды drawing объекта
+			layerItems[1]._gmxNodeID = layerItems[2]._gmxNodeID = layerGroup._gmxNodeID = attr['node'].id;
 
 			layerItems[1].on('mousedown', function(e) {
 				if(attr['mousedown']) attr['mousedown'](e);
@@ -459,16 +471,16 @@
 		{
 			//console.log('startAddPoints:  ', isFinish, editIndex);
 			mouseUp();
-			isFinish = false;
 			if(!onMouseMoveID) onMouseMoveID = gmxAPI.map.addListener('onMouseMove', mouseMove);
 			if(!addItemListenerID) addItemListenerID = gmxAPI.map.addListener('onClick', addDrawingItem);
-			drawingUtils.disablePointerEvents(true, layerItems);
+			drawingUtils.disablePointerEvents(false, layerItems);
+			isFinish = false;
 			gmxAPI._drawing['activeState'] = true;
 			currentObjectID = domObj.objectId;
 		}
 		var stopAddPoints = function()
 		{
-//console.log('stopAddPoints:  ', currentObjectID, isFinish, domObj.objectId);
+			//console.log('stopAddPoints:  ', currentObjectID, isFinish, domObj.objectId);
 			//if(!layerItems[0]) return;
 			gmxAPI.map.removeListener('onMouseMove', onMouseMoveID); onMouseMoveID = null;
 			gmxAPI.map.removeListener('onClick', addItemListenerID); addItemListenerID = null;
@@ -517,17 +529,16 @@
 				
 				var mouseDownWaitID = null;
 				mouseDownFunc = function(ev) {
-					if(currentObjectID && currentObjectID != domObj.objectId) return;	// слишком долго была нажата мышь
 					downTime = new Date().getTime();
 					moveDone = false;
-					drawingUtils.hideBalloon();
-					
-					var button = ev.originalEvent.buttons || ev.originalEvent.button;
-					if(button === 2) return; 	// Нажали правую кнопку
-
 					gmxAPI.mousePressed	= mousePressed = true;
-					//console.log('mouseDownFunc:  ', isFinish, coords.length, button);
+					drawingUtils.hideBalloon();
+
 					var downType = getDownType(ev, coords);
+console.log('downItemID:  ', node.id, gmxAPI._drawing['activeState'], isFinish, downType);
+					if(currentObjectID && downType['_gmxNodeID'] != currentObjectID) return;	// мышь нажата на другом обьекте
+					if(downType['button'] === 2 || !isFinish) return; 	// Нажали правую кнопку
+
 					if('type' in downType) {
 						editIndex = downType['num'];
 						var x = ev.latlng.lng, y = ev.latlng.lat;
@@ -556,7 +567,6 @@
 
 				var dblclick = function(downType)		// Удаление точки
 				{
-					if(currentObjectID && currentObjectID != domObj.objectId) return;	// слишком долго была нажата мышь
 					if(waitStartAddID) clearTimeout(waitStartAddID); waitStartAddID = null;
 
 					if(downType.type !== 'node') return;
@@ -583,7 +593,6 @@
 						coords.splice(downType.num, 1);
 						drawAttr['coords'] = coords;
 						drawSVG(drawAttr);
-//layerGroup.bringToFront();
 					}
 					mouseUp();
 
@@ -594,6 +603,7 @@
 				};
 				drawAttr['dblclick'] = function(e) {
 					var downType = getDownType(e, coords);
+					if(currentObjectID && downType['_gmxNodeID'] != currentObjectID) return;	// мышь нажата на другом обьекте
 					dblclick(downType);
 				}
 				var onFinish = function(downType)		// Окончание редактирования
@@ -612,7 +622,6 @@
 							drawAttr['coords'] = coords;
 							mouseUp();
 							drawSVG(drawAttr);
-//layerGroup.bringToFront();
 							drawingUtils.enablePointerEvents(null, layerItems);
 							return;
 						} else {
@@ -639,16 +648,17 @@
 				
 				var clickWaitID = null;
 				layerGroup.on('click', function(ev) {
-//if(gmxAPI._drawing['activeState']) return;	// режим добавления точек
-//console.log('click:  ', currentObjectID, isFinish, domObj.objectId);
-					if(currentObjectID && currentObjectID != domObj.objectId) return;	// слишком долго была нажата мышь
+					var downType = getDownType(ev, coords);
+					if(currentObjectID && downType['_gmxNodeID'] != currentObjectID) return;	// мышь нажата на другом обьекте
+
+console.log('click:  ', node.id, gmxAPI._drawing['activeState'], isFinish, downType);
+
 					if(moveDone) return;	// слишком долго была нажата мышь
 					mousePressed = moveDone = false;
 
 					gmxAPI._listeners.dispatchEvent('onClick', domObj, domObj);
 					gmxAPI._listeners.dispatchEvent('onClick', gmxAPI.map.drawing, domObj);
 
-					var downType = getDownType(ev, coords);
 					if(downType.type === 'node') {
 						var x = ev.latlng.lng;
 						if(x < -180) x += 360;
@@ -668,26 +678,29 @@
 								}
 							}
 						} else if(editType === 'LINESTRING') {		// Для LINESTRING Click на начальной и конечной точках
-							editIndex = downType.num;
-							if(editIndex === 0) {
+							var eFlag = false;
+							if(downType.num === 0) {
 								coords.reverse();
-								editIndex = -1;
-							} else if(editIndex === len) {
-								if(!isFinish && lastPoint) coords.push([lastPoint.x, lastPoint.y]);
-								lastPoint = null;
-							/*
-								*/
-								editIndex = -1;
+								eFlag = true;
+							} else if(downType.num === len) {
+								//if(!isFinish && lastPoint) coords.push([lastPoint.x, lastPoint.y]);
+								//lastPoint = null;
+								eFlag = true;
 							}
-							if(editIndex === -1) {
+							if(eFlag) {
 								if(isFinish) {
+									editIndex = -1;
 									if(waitStartAddID) clearTimeout(waitStartAddID);
 									waitStartAddID = setTimeout(startAddPoints, 100);
 								} else {
+									editIndex = -1;
 									//lastPoint = null;
 									onFinish(downType);
+//return;
+									//stopAddPoints();
 								}
 							}
+console.log('_____:  ', eFlag, editIndex, gmxAPI._drawing['activeState'], isFinish, downType);
 							return;
 						}
 					}
@@ -722,7 +735,6 @@
 			drawAttr['oBounds'] = oBounds, drawAttr['coords'] = coords;
 			drawAttr['node'] = node;
 			drawSVG(drawAttr);
-			//layerGroup.bringToFront();
 		}
 
 		var obj = gmxAPI.map.addObject(null, null, {'subType': 'drawingFrame', 'getPos': getPos, 'drawMe': drawMe});
@@ -756,6 +768,7 @@
 		// Добавление точки
 		var addDrawingItem = function(ph)
 		{
+console.log('addDrawingItem:  ', ph);
 			if(ph.attr) ph = ph.attr;
 			var latlng = ph.latlng;
 			var x = latlng.lng;
@@ -785,8 +798,6 @@
 					pointBegin = gmxAPI._leaflet['LMap'].project(new L.LatLng(tp[1], tp[0]));
 					flag = (Math.abs(pointBegin.x - point.x) < pointSize && Math.abs(pointBegin.y - point.y) < pointSize);
 				}
-//var zd = new Date().getTime() - lastAddTime;
-//console.log('addDrawingItem:  ', coords.length, flag, currentObjectID);
 				if (flag) {
 					stopAddPoints();
 					return true;
@@ -796,7 +807,6 @@
 			oBounds = gmxAPI.getBounds(coords);
 			repaint();
 			chkEvent(eventType);
-			//lastAddTime = new Date().getTime();
 			return true;
 		};
 
@@ -884,6 +894,8 @@
 			oBounds = gmxAPI.getBounds(coords);
 			createDrawingObj();
 			endDrawing();
+			eventType = 'onFinish';
+			chkEvent(eventType);
 		} else {
 			//startAddPoints();
 			addItemListenerID = gmxAPI.map.addListener('onClick', addDrawingItem);

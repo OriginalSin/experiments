@@ -455,7 +455,11 @@
 
 		map.setMode = function(mode) 
 		{
-			var name = (gmxAPI.baseLayersTools ? gmxAPI.baseLayersTools.getAlias(mode) : mode);
+			var name = mode;
+			if(gmxAPI.baseLayersTools) {
+				var alias = gmxAPI.baseLayersTools.getAliasByName(mode) || mode;
+				name = gmxAPI.baseLayersTools.getAlias(alias) || mode;
+			}
 			map.setBaseLayer(name);
 		}
 
@@ -471,6 +475,10 @@
 		}
 		map.getCurrentBaseLayerName = map.getBaseLayer;
 		map.getMode = map.getBaseLayer;
+		map.getModeID = function(mode) 
+		{
+			return gmxAPI.baseLayersTools.getAliasByName(mode || currentBaseLayerName);
+		}
 
 		map.baseLayerControl = {
 			isVisible: true,

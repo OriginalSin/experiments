@@ -722,7 +722,7 @@
 		{
 			var px = 0;
 			var py = 0;
-			if(gmxAPI.proxyType === 'leaflet') {
+			if(gmxAPI._leaflet && gmxAPI._leaflet['containerPoint']) {
 				px = gmxAPI._leaflet['containerPoint']['x'];
 				py = gmxAPI._leaflet['containerPoint']['y'];
 			} else {
