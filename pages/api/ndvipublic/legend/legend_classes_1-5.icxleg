@@ -1,0 +1,55 @@
+<?xml version="1.0" standalone="no" ?>
+<IC_Legend_Document>
+    <Legend_Entries ENTRY_Default_Newcode="-1" ENTRY_Default_Color="16777215">
+        <ENTRY>
+            <Label>распаханные поля</Label>
+            <Color>
+                <Part_Red>106</Part_Red>
+                <Part_Green>0</Part_Green>
+                <Part_Blue>0</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>1</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>нераспаханные поля</Label>
+            <Color>
+                <Part_Red>249</Part_Red>
+                <Part_Green>124</Part_Green>
+                <Part_Blue>0</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>2</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>слабая растительность</Label>
+            <Color>
+                <Part_Red>163</Part_Red>
+                <Part_Green>245</Part_Green>
+                <Part_Blue>148</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>3</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>средняя растительность</Label>
+            <Color>
+                <Part_Red>101</Part_Red>
+                <Part_Green>184</Part_Green>
+                <Part_Blue>27</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>4</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>яркая растительность</Label>
+            <Color>
+                <Part_Red>5</Part_Red>
+                <Part_Green>108</Part_Green>
+                <Part_Blue>2</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>5</Code>
+        </ENTRY>
+           </Legend_Entries>
+</IC_Legend_Document>

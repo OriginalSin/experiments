@@ -1,0 +1,2 @@
+http://90.157.28.127/gmxloader/index.html
+http://localhost/api/index.html?PPIDH

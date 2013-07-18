@@ -1,0 +1,55 @@
+<?xml version="1.0" standalone="no" ?>
+<IC_Legend_Document>
+    <Legend_Entries ENTRY_Default_Newcode="-1" ENTRY_Default_Color="16777215">
+        <ENTRY>
+            <Label>данные отсутствуют</Label>
+            <Color>
+                <Part_Red>255</Part_Red>
+                <Part_Green>0</Part_Green>
+                <Part_Blue>0</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>1</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>данные хорошего качества</Label>
+            <Color>
+                <Part_Red>255</Part_Red>
+                <Part_Green>255</Part_Green>
+                <Part_Blue>179</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>2</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>данные удовлетворительного качества</Label>
+            <Color>
+                <Part_Red>255</Part_Red>
+                <Part_Green>128</Part_Green>
+                <Part_Blue>0</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>3</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>снег/лед</Label>
+            <Color>
+                <Part_Red>128</Part_Red>
+                <Part_Green>0</Part_Green>
+                <Part_Blue>255</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>4</Code>
+        </ENTRY>
+        <ENTRY>
+            <Label>облачность</Label>
+            <Color>
+                <Part_Red>0</Part_Red>
+                <Part_Green>255</Part_Green>
+                <Part_Blue>255</Part_Blue>
+                <Part_Density>255</Part_Density>
+            </Color>
+            <Code>5</Code>
+        </ENTRY>
+    </Legend_Entries>
+</IC_Legend_Document>
