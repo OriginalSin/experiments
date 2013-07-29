@@ -771,20 +771,20 @@ var gmxAPIutils = {
 		var gmxTileKey = attr.gmxTileKey;
 		var tHash = gmx.attr['tilesAll'][gmxTileKey];
 
-		var ctx = attr['ctx'];
-//delete style['strokeStyle'];
-		for (var key in style) ctx[key] = style[key];
-
-		var x = attr['x'];
-		var y = 256 + attr['y'];
 		var mInPixel = gmx['mInPixel'];
-		var toPixels = function(p) {				// получить координату в px
-			var px1 = p[0] * mInPixel - x; 	px1 = (0.5 + px1) << 0;
-			var py1 = y - p[1] * mInPixel;	py1 = (0.5 + py1) << 0;
-			return [px1, py1];
-		}
 
-		var drawPolygon = function(coords, hideLines) {			// массив точек на границах тайлов
+		var drawPolygon = function(coords, hideLines, pattr, pstyle) {	// массив точек на границах тайлов
+			var ctx = pattr['ctx'];
+//delete style['strokeStyle'];
+			for (var key in pstyle) ctx[key] = pstyle[key];
+
+			var x = pattr['x'];
+			var y = 256 + pattr['y'];
+			var toPixels = function(p) {				// получить координату в px
+				var px1 = p[0] * mInPixel - x; 	px1 = (0.5 + px1) << 0;
+				var py1 = y - p[1] * mInPixel;	py1 = (0.5 + py1) << 0;
+				return [px1, py1];
+			}
 			var arr = [];
 			var lastX = null, lastY = null, prev = null, cntHide = 0;
 			if(style.strokeStyle) {
@@ -826,17 +826,26 @@ var gmxAPIutils = {
 			if(!it['hideLines']) gmxAPIutils.chkHiddenPoints(attr);
 			var geom = it['geometry'];
 			if(geom['type'].indexOf('POLYGON') !== -1) {
-				var coords = geom['coordinates'];
-				for (var j = 0, len1 = coords.length; j < len1; j++) {
-					var coords1 = coords[j];
-					if(geom['type'].indexOf('MULTI') !== -1) {
-						for (var j1 = 0, len2 = coords1.length; j1 < len2; j1++) {
-							drawPolygon(coords1[j1], it['hideLines'][j]);
+				(function() {
+					var it = tHash['data'][i];
+					var pattr = attr;
+					var pstyle = style;
+					var doneFunc = function() {
+						var geom = it['geometry'];
+						var coords = geom['coordinates'];
+						for (var j = 0, len1 = coords.length; j < len1; j++) {
+							var coords1 = coords[j];
+							if(geom['type'].indexOf('MULTI') !== -1) {
+								for (var j1 = 0, len2 = coords1.length; j1 < len2; j1++) {
+									drawPolygon(coords1[j1], it['hideLines'][j], pattr, pstyle);
+								}
+							} else {
+								drawPolygon(coords1, it['hideLines'][j], pattr, pstyle);
+							}
 						}
-					} else {
-						drawPolygon(coords1, it['hideLines'][j]);
-					}
-				}
+					};
+					setTimeout(doneFunc, 0);
+				})();
 			}
 		}
 	}
