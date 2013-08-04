@@ -5,6 +5,7 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 		L.TileLayer.Canvas.prototype._initContainer.call(this);
 		var myLayer = this;
 		var options = this.options;
+		if(!('gmx' in L)) L.gmx = {'hosts':{}};
 		if(!('gmx' in options)) {
 			options.gmx = {
 				'hostName': options.hostName
@@ -12,42 +13,125 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 				,'apiKey': options.apiKey
 				,'mapName': options.mapName
 				,'layerName': options.layerName
+				,'beginDate': options.beginDate
+				,'endDate': options.endDate
 			};
 			this._map.on('zoomstart', function(e) {
 				options.gmx['zoomstart'] = true;
 			});
 			this._map.on('zoomend', function(e) {
 				options.gmx['zoomstart'] = false;
+				//gmxAPIutils.imageLoader.removeItemsByZoom(myLayer._map._zoom);
+		options.gmx.tileSize = gmxAPIutils.getTileSize(myLayer._map._zoom);
+		options.gmx.mInPixel = 256 / options.gmx.tileSize;
+		options.gmx._tilesToLoad = 0;
+		// Получение сдвига OSM
+		var pos = myLayer._map.getCenter();
+		var p1 = myLayer._map.project(new L.LatLng(gmxAPIutils.from_merc_y(gmxAPIutils.y_ex(pos.lat)), pos.lng), myLayer._map._zoom);
+		var point = myLayer._map.project(pos);
+		options.gmx.shiftY = point.y - p1.y;
+							myLayer._update();
 			});
 			
-			gmxAPIutils.getSessionKey(
-				{
-					'url': "http://" + options.gmx.apikeyRequestHost + "/ApiKey.ashx?WrapStyle=None&Key=" + options.gmx.apiKey
-				}, function(ph) {
-					if(ph && ph['Status'] === 'ok') {
-						options.gmx.sessionKey = ph['Result']['Key'];
-						options.gmx.tileSenderPrefix = "http://" + options.gmx.hostName + "/" + 
-							"TileSender.ashx?WrapStyle=None" + 
-							"&key=" + encodeURIComponent(options.gmx.sessionKey)
-							;
-						//console.log('getSessionKey: ' , options.gmx);
-						gmxAPIutils.getLayerPropreties(
-							{
-								'tileSenderPrefix': options.gmx.tileSenderPrefix
-								,'mapName': options.gmx.mapName
-								,'layerName': options.gmx.layerName
-							}, function(ph) {
-								options.gmx.properties = ph['properties'];
-								options.gmx.geometry = ph['geometry'];
-								options.gmx.attr = gmxAPIutils.prepareLayerBounds(ph);
-								//console.log('getLayerPropreties: ' , options.gmx);
-								myLayer._update();
-						});
-					} else {
-						console.log('Error in getSessionKey: ' , ph);
+			var getMap = function(callback) {
+				var pt = L.gmx['hosts'][options.gmx.hostName]['maps'][options.gmx.mapName];
+				if(!pt) pt = L.gmx['hosts'][options.gmx.hostName]['maps'][options.gmx.mapName] = {};
+				if(!pt['mapCallbacks']) {
+					pt['mapCallbacks'] = [];
+					gmxAPIutils.getMapPropreties(options.gmx, function(json) {
+						var res = {'error': 'map not found'};
+						if(json && json['Status'] === 'ok' && json['Result']) {
+							res = pt['res'] = json['Result'];
+						}
+						for (var i = 0, len = pt['mapCallbacks'].length; i < len; i++) {
+							pt['mapCallbacks'][i](res);
+						}
+						delete pt['mapCallbacks'];
+					});
+				}
+				pt['mapCallbacks'].push(function(res) {
+					callback(res);
+				});
+			}
+			var getLayer = function(arr, callback) {
+				for(var i=0, len=arr.length; i<len; i++) {
+					var layer = arr[i];
+					if(layer['type'] === 'layer') {
+						if(options.gmx.layerName === layer['content']['properties']['name']) {
+							var ph = layer['content'];
+							options.gmx.properties = ph['properties'];
+							options.gmx.geometry = ph['geometry'];
+							var attr = gmxAPIutils.prepareLayerBounds(ph);
+							if(ph['properties']['IsRasterCatalog']) {
+								attr['rasterBGfunc'] = function(x, y, z, idr) {
+									var qURL = 'http://' + options.gmx.hostName
+										+'/TileSender.ashx?ModeKey=tile'
+										+'&x=' + x
+										+'&y=' + y
+										+'&z=' + z
+										+'&idr=' + idr
+										+'&MapName=' + options.gmx.mapName
+										+'&LayerName=' + options.gmx.layerName
+										+'&key=' + encodeURIComponent(options.gmx.sessionKey);
+									return qURL;
+								};
+							}
+							options.gmx.attr = attr;
+							myLayer._update();
+							return;
+						}
 					}
-			});
+				}
+			}
+			var setSessionKey = function(st) {
+				options.gmx.sessionKey = pt['sessionKey'] = st;
+				options.gmx.tileSenderPrefix = "http://" + options.gmx.hostName + "/" + 
+					"TileSender.ashx?WrapStyle=None" + 
+					"&key=" + encodeURIComponent(options.gmx.sessionKey)
+				;
+			}
 			
+			var pt = L.gmx['hosts'][options.gmx.hostName];
+			if(!pt) pt = L.gmx['hosts'][options.gmx.hostName] = {'maps': {}};
+			if(!pt['sessionKey']) {
+				if(!pt['sessionCallbacks']) {
+					pt['sessionCallbacks'] = [];
+					gmxAPIutils.getSessionKey(
+						{
+							'url': "http://" + options.gmx.apikeyRequestHost + "/ApiKey.ashx?WrapStyle=None&Key=" + options.gmx.apiKey
+						}, function(ph) {
+							if(ph && ph['Status'] === 'ok') {
+								for (var i = 0, len = pt['sessionCallbacks'].length; i < len; i++) {
+									pt['sessionCallbacks'][i](ph['Result']['Key']);
+								}
+								delete pt['sessionCallbacks'];
+							}
+						}
+					);
+				}
+				pt['sessionCallbacks'].push(function(key) {
+					setSessionKey(key);
+					getMap(function(ph) {
+						if(ph.error || !ph.children) {
+							console.log('Error: ' + options.gmx.mapName + ' - ' + ph.error);
+						} else {
+							getLayer(ph.children);
+						}
+					});
+				});
+			} else {
+				if(!pt['maps'][options.gmx.mapName]) {
+					getMap(function(ph) {
+						if(ph.error || !ph.children) {
+							console.log('Error: ' + options.gmx.mapName + ' - ' + ph.error);
+						} else {
+							getLayer(ph.children);
+						}
+					});
+				} else {
+					getLayer(pt['maps'][options.gmx.mapName]['res'].children);
+				}
+			}
 		}
 		options.gmx.tileSize = gmxAPIutils.getTileSize(this._map._zoom);
 		options.gmx.mInPixel = 256 / options.gmx.tileSize;
@@ -61,8 +145,8 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 	}
 	,
 	_update: function () {
-
-		if (!this._map) { return; }
+		//if (!this._map) { return; }
+		if(this.options.gmx['zoomstart']) return;
 
 		var bounds = this._map.getPixelBounds(),
 		    zoom = this._map.getZoom(),
@@ -100,9 +184,10 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 		var gmx = this.options.gmx;
 		if(!gmx.attr) return;
 		if(!gmx.attr.tilesNeedLoad) {
-			var res = gmxAPIutils.getNeedTiles(gmx.attr);
+			var res = gmxAPIutils.getNeedTiles(gmx.attr, gmx.beginDate, gmx.endDate);
 			gmx.attr.tilesNeedLoadCounts = res.tilesNeedLoadCounts;
 			gmx.attr.tilesNeedLoad = res.tilesNeedLoad;
+			gmx.attr.tilesLoadCallbacks = {};
 			gmx.attr.cntItems = 0;
 			//console.log('getNeedTiles: ' , gmx);
 		}
@@ -111,22 +196,25 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 		var gmxTilePoint = gmxAPIutils.getTileNumFromLeaflet(tilePoint, zoom);
 		var cnt = gmxAPIutils.loadTile(gmx, gmxTilePoint, function(ph) {
 			var gmxTileKey = ph.gmxTileKey;
-			delete gmx.attr.tilesNeedLoad[gmxTileKey];
-			var cntItems = gmxAPIutils.parseTile(gmx, ph);
-			gmx.attr.cntItems += cntItems;
+			//delete gmx.attr.tilesNeedLoad[gmxTileKey];
+			if(!gmx.attr['tilesAll'][gmxTileKey]['data']) {
+				var cntItems = gmxAPIutils.parseTile(gmx, ph);
+				gmx.attr.cntItems += cntItems;
+			}
 			if(ph.cnt === 0) {
-				myLayer.gmxDrawTile(null, tilePoint, zoom);
+				myLayer.gmxDrawTile(tilePoint, zoom);
 				//console.log('loadTile: ' , gmxTileKey, cntItems, ph.cnt);
 			}
 		});
-		if(cnt === 0) myLayer.gmxDrawTile(null, tilePoint, zoom);
+		if(cnt === 0) myLayer.gmxDrawTile(tilePoint, zoom);
 		//console.log('loadTile cnt: ' , gmxTilePoint, cnt);
 	}
 	,
-	gmxDrawTile: function (tile, tilePoint, zoom) {
+	gmxDrawTile: function (tilePoint, zoom) {
 		var options = this.options;
 		var gmx = options.gmx;
 		//if(gmx['zoomstart']) return;
+//console.log('_tilesToLoad: ', gmx['zoomstart']);
 		var gmxTilePoint = gmxAPIutils.getTileNumFromLeaflet(tilePoint, zoom);
 		var arr = gmxAPIutils.getTileKeysIntersects(gmxTilePoint, gmx.attr['tilesAll']);
 		for (var i = 0, len = arr.length; i < len; i++) {
@@ -134,13 +222,27 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 			var pt = gmx.attr['tilesAll'][key];
 			var data = pt['data'] || [];
 			if(data.length === 0) continue;
-			if(!tile) {
-				tile = this.gmxGetCanvasTile(tilePoint);
-			}
-			this.gmxPaintTile(tile, key, zoom);
+			this.gmxPaintTile(tilePoint, key, zoom);
 		}
-		this.tileDrawn(tile);
 //console.log('_tilesToLoad: ', this.options.gmx._tilesToLoad);
+	}
+	,
+	gmxPaintTile: function (tilePoint, key, zoom) {
+		var options = this.options;
+		var gmx = options.gmx;
+		var style = gmx.attr['styles'][0];
+//console.log('gmxPaintTile: ', zoom, pt['data']);
+		var gmxTilePoint = this.gmxGetTileNum(tilePoint, zoom);
+		gmxAPIutils.paintTilePolygons({
+			'gmx': gmx
+			,'gmxTilePoint': gmxTilePoint
+			,'gmxTileKey': key
+			,'x': 256 * gmxTilePoint.x
+			,'y': 256 * gmxTilePoint.y
+			,'layer': this
+			,'tilePoint': tilePoint
+			,'zoom': zoom
+		}, style);
 	}
 	,
 	gmxGetCanvasTile: function (tilePoint) {
@@ -152,16 +254,8 @@ L.TileLayer.gmxVectorLayer = L.TileLayer.Canvas.extend(
 		var tile = this._getTile();
 		tile.id = tKey;
 		tile._layer = this;
+		tile._tileComplete = true;
 		tile._tilePoint = tilePoint;
-/*var ctx = tile.getContext('2d');
-ctx.lineWidth = 2;
-ctx.strokeStyle = 'rgba(0, 0, 255, 1)';
-ctx.fillStyle = 'rgba(0, 0, 255, 1)';
-ctx.fillRect(22, 22, 220, 220);
-ctx.strokeRect(2, 2, 250, 250);
-	ctx.stroke();
-	ctx.fill();*/
-
 		this._tiles[tKey] = tile;
 		this._tileContainer.appendChild(tile);
 
@@ -173,22 +267,6 @@ ctx.strokeRect(2, 2, 250, 250);
 		return this._tiles[tKey];
 	}
 	,
-	gmxPaintTile: function (tile, key, zoom) {
-		var options = this.options;
-		var gmx = options.gmx;
-		var style = gmx.attr['styles'][0];
-//console.log('gmxPaintTile: ', zoom, pt['data']);
-		var gmxTilePoint = this.gmxGetTileNum(tile._tilePoint, zoom);
-		gmxAPIutils.paintTilePolygons({
-			'gmx': gmx
-			,'gmxTileKey': key
-			,'x': 256 * gmxTilePoint.x
-			,'y': 256 * gmxTilePoint.y
-			,'ctx': tile.getContext('2d')
-		}, style);
-		tile._tileComplete = true;
-	}
-	,
 	gmxGetTileNum: function (tilePoint, zoom) {
 		var pz = Math.pow(2, zoom);
 		var tx = tilePoint.x % pz + (tilePoint.x < 0 ? pz : 0);
@@ -198,6 +276,11 @@ ctx.strokeRect(2, 2, 250, 250);
 			,'y': pz/2 - 1 - ty % pz
 		};
 		gmxTilePoint['gmxTileID'] = zoom + '_' + gmxTilePoint.x + '_' + gmxTilePoint.y
+		
+		var mercTileSize = this.options.gmx.tileSize;
+		var p = [gmxTilePoint.x * mercTileSize, gmxTilePoint.y * mercTileSize];
+		var arr = [p, [p[0] + mercTileSize, p[1] + mercTileSize]];
+		gmxTilePoint['bounds'] = gmxAPIutils.bounds(arr);
 		return gmxTilePoint;
 	}
 	,
@@ -461,12 +544,16 @@ var gmxAPIutils = {
 				var renderStyle = it['RenderStyle'];
 				if(renderStyle['outline']) {
 					var outline = renderStyle['outline'];
-					if(outline['thickness']) pt['lineWidth'] = outline['thickness'];
-					pt['strokeStyle'] = gmxAPIutils.dec2rgba(outline['color'] || 255, outline['opacity']/100 || 1);
+					pt['lineWidth'] = ('thickness' in outline ? outline['thickness'] : 0);
+					var color = ('color' in outline ? outline['color'] : 255);
+					var opacity = ('opacity' in outline ? outline['opacity']/100 : 1);
+					pt['strokeStyle'] = gmxAPIutils.dec2rgba(color, opacity);
 				}
 				if(renderStyle['fill']) {
 					var fill = renderStyle['fill'];
-					pt['fillStyle'] = gmxAPIutils.dec2rgba(fill['color'] || 255, fill['opacity']/100 || 1);
+					var color = ('color' in fill ? fill['color'] : 255);
+					var opacity = ('opacity' in fill ? fill['opacity']/100 : 1);
+					pt['fillStyle'] = gmxAPIutils.dec2rgba(color, opacity);
 				}
 				styles.push(pt);
 			}
@@ -525,7 +612,7 @@ var gmxAPIutils = {
 		res['tileCounts'] = cnt;
 		res['layerType'] = type;						// VectorTemporal Vector
 		res['identityField'] = prop['identityField'];	// ogc_fid
-		res['GeometryType'] = prop['GeometryType'];		// point
+		res['GeometryType'] = prop['GeometryType'];		// тип геометрий обьектов в слое
 		return res;
 	}
 	,
@@ -640,10 +727,14 @@ var gmxAPIutils = {
 		var arr = gmxAPIutils.getTileKeysIntersects(gmxTilePoint, ph.attr['tilesAll']);
 		for (var i = 0, len = arr.length; i < len; i++) {
 			var key = arr[i];
+			if(!ph.attr['tilesLoadCallbacks'][key]) ph.attr['tilesLoadCallbacks'][key] = [];
+			ph.attr['tilesLoadCallbacks'][key].push(callback);
 			if(key in ph.attr['tilesNeedLoad']) {
 				var it = ph.attr['tilesAll'][key];
 				var tp = it['gmxTilePoint'];
 				if(gmxAPIutils.isTileKeysIntersects(gmxTilePoint, tp)) {
+					delete ph.attr['tilesNeedLoad'][key];
+					
 					if(!prefix) {
 						prefix = ph['tileSenderPrefix'] + '&ModeKey=tile&r=t';
 						prefix += "&MapName=" + ph['mapName'];
@@ -657,11 +748,18 @@ var gmxAPIutils = {
 					cnt++;
 					(function() {
 						var gmxTileKey = key;
+						var attr = ph.attr;
 						gmxAPIutils.request({
 							'url': url
 							,'callback': function(st) {
 								cnt--;
-								callback({'cnt': cnt, 'gmxTileKey': gmxTileKey, 'data': JSON.parse(st)});
+								var res = JSON.parse(st);
+								var arr = attr['tilesLoadCallbacks'][gmxTileKey];
+								for (var i = 0, len = arr.length; i < len; i++) {
+									arr[i]({'cnt': cnt, 'gmxTileKey': gmxTileKey, 'data': res});
+								}
+								delete attr['tilesLoadCallbacks'][gmxTileKey];
+								//callback({'cnt': cnt, 'gmxTileKey': gmxTileKey, 'data': JSON.parse(st)});
 								//console.log('drawTileID: ' , data);
 							}
 						});
@@ -767,62 +865,67 @@ var gmxAPIutils = {
 	}
 	,
 	'paintTilePolygons': function(attr, style) {	// Отрисовка геометрии полигона
+// 'use strict';
 		var gmx = attr.gmx;
+		var zoom = attr.zoom;
 		var gmxTileKey = attr.gmxTileKey;
 		var tHash = gmx.attr['tilesAll'][gmxTileKey];
 
 		var mInPixel = gmx['mInPixel'];
-
-		var drawPolygon = function(coords, hideLines, pattr, pstyle) {	// массив точек на границах тайлов
-			var ctx = pattr['ctx'];
-//delete style['strokeStyle'];
-			for (var key in pstyle) ctx[key] = pstyle[key];
-
-			var x = pattr['x'];
-			var y = 256 + pattr['y'];
-			var toPixels = function(p) {				// получить координату в px
-				var px1 = p[0] * mInPixel - x; 	px1 = (0.5 + px1) << 0;
-				var py1 = y - p[1] * mInPixel;	py1 = (0.5 + py1) << 0;
-				return [px1, py1];
-			}
-			var arr = [];
-			var lastX = null, lastY = null, prev = null, cntHide = 0;
-			if(style.strokeStyle) {
-				ctx.beginPath();
-				for (var i = 0, len = coords.length; i < len; i++) {
-					var lineIsOnEdge = false;
-					if(i == hideLines[cntHide]) {
-						lineIsOnEdge = true;
-						cntHide++;
-					}
-					var p1 = toPixels(coords[i]);
-					if(lastX !== p1[0] || lastY !== p1[1]) {
-						if(lineIsOnEdge || i == 0)	ctx.moveTo(p1[0], p1[1]);
-						else 						ctx.lineTo(p1[0], p1[1]);
-						lastX = p1[0], lastY = p1[1];
-						if(ctx.fillStyle) arr.push(p1);
-					}
-				}
-				ctx.stroke();
-			} else {
-				arr = coords;
-			}
-			if(style.fillStyle) {
-				ctx.beginPath();
-				ctx.globalAlpha = 0;
-				for (var i = 0, len = arr.length; i < len; i++) {
-					var p1 = arr[i];
-					if(!style.strokeStyle) p1 = toPixels(p1);
-					if(i == 0)	ctx.moveTo(p1[0], p1[1]);
-					else		ctx.lineTo(p1[0], p1[1]);
-				}
-				ctx.globalAlpha = 1;
-				ctx.fill();
-			}
-		}
 		
+		var showRaster = (
+			'rasterBGfunc' in gmx.attr
+			&&
+			(
+				zoom >= gmx['properties']['RCMinZoomForRasters'] || gmx['properties']['quicklook']
+			)
+			? true
+			: false
+		);
+		/*
+		if(showRaster) {
+			var needLoadRasters = 0;
+			var gmxTilePoint = attr.gmxTilePoint;
+			var arr = gmxTilePoint['drawArr'] = [];
+			for (var i = 0, len = tHash['data'].length; i < len; i++) {
+				var it = tHash['data'][i];
+				if(!it['bounds']) gmxAPIutils.itemBounds(it);
+				if(!gmxTilePoint['bounds'].intersects(it['bounds'])) continue;
+				var ptt = {'it': it, 'attr': attr, 'style': style};
+				arr.push(ptt);
+				needLoadRasters++;
+				gmxAPIutils.imageLoader.push({
+					'callback' : function(img) {
+						ptt['bgImage'] = img;
+						needLoadRasters--;
+						//doneFunc();
+//console.log('dddddd ', gmxTilePoint.gmxTileID, pattr.needLoadRasters);
+						chkReadyRasters(pattr);
+					}
+					,'onerror' : function() {
+						needLoadRasters--;
+						//doneFunc();
+						chkReadyRasters(pattr);
+					}
+					,'src': gmx.attr['rasterBGfunc'](gmxTilePoint['x'], gmxTilePoint['y'], pattr['zoom'], it.id)
+				});
+			}
+		}*/
+		var gmxTilePoint = attr.gmxTilePoint;
 		for (var i = 0, len = tHash['data'].length; i < len; i++) {
 			var it = tHash['data'][i];
+			if(!it['bounds']) gmxAPIutils.itemBounds(it);
+			if(!gmxTilePoint['bounds'].intersects(it['bounds'])) continue;
+			if(!attr.ctx) {
+				var tile = attr.layer.gmxGetCanvasTile(attr.tilePoint);
+				attr.layer.tileDrawn(tile);
+				attr.ctx = tile.getContext('2d');
+				if(showRaster) {
+					attr.drawArr = [];
+					attr.needLoadRasters = 0;
+				}
+			}
+
 			if(!it['hideLines']) gmxAPIutils.chkHiddenPoints(attr);
 			var geom = it['geometry'];
 			if(geom['type'].indexOf('POLYGON') !== -1) {
@@ -830,9 +933,66 @@ var gmxAPIutils = {
 					var it = tHash['data'][i];
 					var pattr = attr;
 					var pstyle = style;
+							var ctx = pattr['ctx'];
+							var x = pattr['x'];
+							var y = 256 + pattr['y'];
 					var doneFunc = function() {
+ //'use strict';
 						var geom = it['geometry'];
 						var coords = geom['coordinates'];
+
+						var drawPolygon = function(coords, bgImage, hideLines, pattr, pstyle) {	// массив точек на границах тайлов
+				//delete style['strokeStyle'];
+							for (var key in pstyle) ctx[key] = pstyle[key];
+
+							var toPixels = function(p) {				// получить координату в px
+								var px1 = p[0] * mInPixel - x; 	px1 = (0.5 + px1) << 0;
+								var py1 = y - p[1] * mInPixel;	py1 = (0.5 + py1) << 0;
+								return [px1, py1];
+							}
+							var arr = [];
+							var lastX = null, lastY = null, prev = null, cntHide = 0;
+							if(style.strokeStyle) {
+								ctx.beginPath();
+								for (var i = 0, len = coords.length; i < len; i++) {
+									var lineIsOnEdge = false;
+									if(i == hideLines[cntHide]) {
+										lineIsOnEdge = true;
+										cntHide++;
+									}
+									var p1 = toPixels(coords[i]);
+									if(lastX !== p1[0] || lastY !== p1[1]) {
+										if(lineIsOnEdge || i == 0)	ctx.moveTo(p1[0], p1[1]);
+										else 						ctx.lineTo(p1[0], p1[1]);
+										lastX = p1[0], lastY = p1[1];
+										if(ctx.fillStyle) arr.push(p1);
+									}
+								}
+								ctx.stroke();
+							} else {
+								arr = coords;
+							}
+/*
+*/
+							if(style.fillStyle || bgImage) {
+								if(bgImage) {
+									var pattern = ctx.createPattern(bgImage, "no-repeat");
+									ctx.fillStyle = pattern;
+									//delete it['bgImage'];
+								}
+								ctx.beginPath();
+								ctx.globalAlpha = 0;
+								for (var i = 0, len = arr.length; i < len; i++) {
+									var p1 = arr[i];
+									if(!style.strokeStyle) p1 = toPixels(p1);
+									if(i == 0)	ctx.moveTo(p1[0], p1[1]);
+									else		ctx.lineTo(p1[0], p1[1]);
+								}
+								ctx.globalAlpha = 1;
+								ctx.fill();
+								//ctx.clip();
+							}
+						}
 						for (var j = 0, len1 = coords.length; j < len1; j++) {
 							var coords1 = coords[j];
 							if(geom['type'].indexOf('MULTI') !== -1) {
@@ -840,13 +1000,184 @@ var gmxAPIutils = {
 									drawPolygon(coords1[j1], it['hideLines'][j], pattr, pstyle);
 								}
 							} else {
-								drawPolygon(coords1, it['hideLines'][j], pattr, pstyle);
+								drawPolygon(coords1, geom['bgImage'], it['hideLines'][j], pattr, pstyle);
 							}
 						}
+						delete geom['bgImage'];
+
+var tt =1;
 					};
-					setTimeout(doneFunc, 0);
+					if(showRaster) {
+						var gmxTilePoint = pattr['gmxTilePoint'];
+						var chkReadyRasters = function(tattr) {
+//tattr = pattr;
+							tattr.needLoadRasters--;
+							if(tattr.needLoadRasters < 1) {
+						//setTimeout(function() {
+var arr = tattr.drawArr;
+var len3 = arr.length;
+//console.log('dddddd ', gmxTilePoint.gmxTileID, len3, mInPixel);
+								for (var j2 = 0; j2 < len3; j2++) {
+									var tt = arr[j2];
+									//if(arr[j2]) arr[j2]();
+									doneFunc(tt[0], tt[1]);
+								}
+//console.log('end ', gmxTilePoint.gmxTileID, len3);
+								tattr.drawArr = [];
+						//}, 10);
+var tt =1;
+							}
+						}
+						pattr.needLoadRasters++;
+						pattr.drawArr.push([it, pattr]);
+				(function() {
+					var pt = it;
+					var geo = geom;
+					var rattr = pattr;
+				
+						gmxAPIutils.imageLoader.push({
+							'callback' : function(img) {
+								geo['bgImage'] = img;
+/*						var canvas = document.createElement('canvas');
+						canvas.width = canvas.height = 256;
+						var ptx = canvas.getContext('2d');
+						ptx.drawImage(img, 0, 0, 256, 256, 0, 0, 256, 256);
+						pt['bgImage'] = canvas;*/
+								doneFunc(it, rattr);
+//console.log('dddddd ', gmxTilePoint.gmxTileID, pattr.needLoadRasters);
+								//chkReadyRasters(rattr);
+								//setTimeout(function() { chkReadyRasters(rattr); }, 0);
+							}
+							,'onerror' : function() {
+								doneFunc(it, rattr);
+console.log('onerror ', gmxTilePoint.gmxTileID, it.id);
+								//chkReadyRasters(rattr);
+							}
+							,'src': gmx.attr['rasterBGfunc'](gmxTilePoint['x'], gmxTilePoint['y'], rattr['zoom'], it.id)
+							,'crossOrigin': 'anonymous'
+						});
+				})();
+					} else {
+						setTimeout(doneFunc, 0);
+					}
 				})();
 			}
+		}
+	}
+	,
+	'imageLoader': {		// imageLoader - менеджер загрузки image
+		'maxCount': 32						// макс.кол. запросов
+		,'curCount': 0						// номер текущего запроса
+		,'timer': null						// таймер
+		,'items': []						// массив текущих запросов
+		,'itemsHash': {}						// Хэш по image.src
+		,'itemsCache': {}					// Кэш загруженных image по image.src
+		,'emptyImageUrl': 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='
+		,
+		'removeItemsByZoom': function(zoom)	{	// остановить и удалить из очереди запросы по zoom
+			for (var key in gmxAPIutils.imageLoader.itemsCache)
+			{
+				var q = gmxAPIutils.imageLoader.itemsCache[key][0];
+				if('zoom' in q && q['zoom'] != zoom && q['loaderObj']) {
+					q['loaderObj'].src = gmxAPIutils.imageLoader.emptyImageUrl;
+				}
+			}
+			var arr = [];
+			for (var i = 0, len = gmxAPIutils.imageLoader.items.length; i < len; i++)
+			{
+				var q = gmxAPIutils.imageLoader.items[i];
+				if(!q['zoom'] || q['zoom'] === zoom) {
+					arr.push(q);
+				}
+			}
+			gmxAPIutils.imageLoader.items = arr;
+			return gmxAPIutils.imageLoader.items.length;
+		}
+		,
+		'callCacheItems': function(item) {		// загрузка item завершена
+			if(gmxAPIutils.imageLoader.itemsCache[item.src]) {
+				var arr = gmxAPIutils.imageLoader.itemsCache[item.src];
+				var first = arr[0];
+				for (var i = 0, len = arr.length; i < len; i++)
+				{
+					var it = arr[i];
+					if(first.isError) {
+						if(it.onerror) it.onerror(null);
+					} else if(first.imageObj) {
+						if(it.callback) it.callback(first.imageObj);
+					} else if(first.svgPattern) {
+						if(it.callback) it.callback(first.svgPattern, true);
+					}
+				}
+				delete gmxAPIutils.imageLoader.itemsCache[item.src];
+			}
+			gmxAPIutils.imageLoader.nextLoad();
+		}
+		,
+		'nextLoad': function() {			// загрузка следующего
+			if(gmxAPIutils.imageLoader.curCount > gmxAPIutils.imageLoader.maxCount) return;
+			if(gmxAPIutils.imageLoader.items.length < 1) {
+				gmxAPIutils.imageLoader.curCount = 0;
+				if(gmxAPIutils.imageLoader.timer) {
+					clearInterval(gmxAPIutils.imageLoader.timer);
+					gmxAPIutils.imageLoader.timer = null;
+				}
+				return false;
+			}
+			var item = gmxAPIutils.imageLoader.items.shift();
+
+			if(gmxAPIutils.imageLoader.itemsCache[item.src]) {
+				var pitem = gmxAPIutils.imageLoader.itemsCache[item.src][0];
+				if(pitem.isError) {
+					if(item.onerror) item.onerror(null);
+				} else if(pitem.imageObj) {
+					if(item.callback) item.callback(pitem.imageObj);
+				} else {
+					gmxAPIutils.imageLoader.itemsCache[item.src].push(item);
+				}
+			} else {
+				gmxAPIutils.imageLoader.itemsCache[item.src] = [item];
+				gmxAPIutils.imageLoader.setImage(item);
+			}
+		}
+		,
+		'setImage': function(item) {			// загрузка image
+			var imageObj = new Image();
+			item['loaderObj'] = imageObj;
+			if(item['crossOrigin']) imageObj.crossOrigin = item['crossOrigin'];
+			imageObj.onload = function() {
+				gmxAPIutils.imageLoader.curCount--;
+				item.imageObj = imageObj;
+				delete item['loaderObj'];
+				gmxAPIutils.imageLoader.callCacheItems(item);
+			};
+			imageObj.onerror = function() {
+				gmxAPIutils.imageLoader.curCount--;
+				item.isError = true;
+				gmxAPIutils.imageLoader.callCacheItems(item);
+			};
+			gmxAPIutils.imageLoader.curCount++;
+			imageObj.src = item.src;
+		}
+		,
+		'chkTimer': function() {			// установка таймера
+			if(!gmxAPIutils.imageLoader.timer) {
+				gmxAPIutils.imageLoader.timer = setInterval(gmxAPIutils.imageLoader.nextLoad, 50);
+			}
+		}
+		,
+		'push': function(item)	{			// добавить запрос в конец очереди
+			gmxAPIutils.imageLoader.items.push(item);
+			gmxAPIutils.imageLoader.chkTimer();
+			return gmxAPIutils.imageLoader.items.length;
+		}
+		,'unshift': function(item)	{		// добавить запрос в начало очереди
+			gmxAPIutils.imageLoader.items.unshift(item);
+			gmxAPIutils.imageLoader.chkTimer();
+			return gmxAPIutils.imageLoader.items.length;
+		}
+		,'getCounts': function()	{		// получить размер очереди + колич.выполняющихся запросов
+			return gmxAPIutils.imageLoader.items.length + (gmxAPIutils.imageLoader.curCount > 0 ? gmxAPIutils.imageLoader.curCount : 0);
 		}
 	}
 	,'r_major': 6378137.000
