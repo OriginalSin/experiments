@@ -52,7 +52,7 @@
 				control.baseLayers.satelliteControl.style.display = (mode === 'satellite' ? 'block' : 'none');
 				control.baseLayers.mapControl.style.display = (mode === 'map' ? 'block' : 'none');
 				control.baseLayers.currMode = mode;
-				document.getElementById("control7").className = (mode === 'map' ? 'whiteColor' : '');
+				//document.getElementById("control7").className = (mode === 'map' ? 'whiteColor' : '');
 				//console.log('setMapType ', mode);
 			}
 			,

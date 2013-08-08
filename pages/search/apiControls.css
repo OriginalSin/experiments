@@ -36,15 +36,15 @@
 	bottom: 0px;
 }
 .underPage {
-    background: none repeat scroll 0 0 black;
-    opacity: 0.3;
+    background: none repeat scroll 0 0 white;
+    opacity: 0.5;
     width: 100%;	
     height: 20px;
 }
 #control8 {
 	position: absolute;
 	right: 8px;
-	top: 0px;
+	top: 3px;
 }
 #map_control, #satellite_control {
     height: 80px;
@@ -57,28 +57,26 @@
 #control_copyright {
 	position: absolute;
 	left: 18px;
-	top: 0px;
+	top: 2px;
 	font-family: Tahoma;
-	font-size: 10pt;
-    font-weight: bold;
+	font-size: 9pt;
 }
 
 #locationTxt {
 	font-family: Tahoma;
-	font-size: 10pt;
-    font-weight: bold;
+	font-size: 9pt;
     margin-right: 20px;	
 	cursor: pointer;
 }
 #scaleBarTxt {
 	font-family: Tahoma;
-	font-size: 10pt;
-    font-weight: bold;
+	font-size: 9pt;
 }
 #scaleBar {
+	border: 1px solid black;
     background-color: white;
     display: inline-block;
-    height: 8px;
+    height: 4px;
     width: 40px;
 	margin-bottom: 1px;
 }
@@ -127,12 +125,12 @@
 	float: none ! important;
 }
 #Print { 			background-position:-52px -2px; }
-#Print:hover { 		background-position:-52px -33px; }
+#Print:hover { 		background-color: #616262; }
 #PermaLinkControl { 				background-position:-83px -2px; }
 #PermaLinkControl:hover { 		background-color: #616262; }
 
 .Rules { 			background-position:-114px -2px; }
-.Rules:hover { 		background-position:-114px -33px; }
+.Rules:hover { 		background-color: #616262; }
 .Button { 			background-position:-238px -2px; }
 .Button:hover {		background-color: #616262; }
 
@@ -156,7 +154,7 @@
 .LineSelect:hover { background-color: #616262; }
 
 .Pen { 				background-position:-207px -2px; }
-.Pen:hover { 		background-position:-207px -33px; }
+.Pen:hover { 		background-color: #616262; }
 
 .Hover {
 	background-color: #616262 ! important;
@@ -249,7 +247,7 @@
 	margin: 6px 3px;
 }
 .Plus:hover {
-	background-position:-2px -28px;
+	background-color: #616262;
 }
 .Minus {
 	width: 23px;
@@ -258,7 +256,7 @@
 	margin: 6px 3px;
 }
 .Minus:hover {
-	background-position:-27px -28px;
+	background-color: #616262;
 }
 
 .Rulers {
@@ -479,11 +477,11 @@
 .satelliteIcon
 {
     background-image: url("icone.png") ! important;
-    background-position:-58px -64px ! important;
+    background-position:-58px -33px ! important;
 }
 
 .mapIcon
 {
     background-image: url("icone.png") ! important;
-    background-position:-222px -64px ! important;
+    background-position:-222px -33px ! important;
 }
