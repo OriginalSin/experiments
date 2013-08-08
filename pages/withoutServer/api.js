@@ -1517,7 +1517,8 @@ window.gmxAPI = {
 		{
 			if (!done)
 			{
-				if (script.readyState === 'loaded' || this.readyState === 'complete' )
+				//if (script.readyState === 'loaded' || this.readyState === 'complete' )
+				if (script.readyState === 'complete')
 				{
 					var ready = function() {
 						clearInterval(intervalError);

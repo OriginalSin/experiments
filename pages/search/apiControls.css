@@ -1,0 +1,489 @@
+﻿body {
+/*
+	background-color: gray;
+*/
+}
+
+#control1 {
+	position: absolute;
+	left: 22px;
+	top: 22px;
+}
+#control2 {
+	position: absolute;
+	left: 120px;
+	top: 22px;
+}
+#control3 {
+	position: absolute;
+	left: 20px;
+	top: 85px;
+}
+#control4 {
+	position: absolute;
+	right: 40px;
+	top: 200px;
+}
+#control6, #control5 {
+	position: absolute;
+	right: 24px;
+	top: 24px;
+}
+#control7 {
+	position: absolute;
+    left: 0;
+    right: 0;
+	bottom: 0px;
+}
+.underPage {
+    background: none repeat scroll 0 0 black;
+    opacity: 0.3;
+    width: 100%;	
+    height: 20px;
+}
+#control8 {
+	position: absolute;
+	right: 8px;
+	top: 0px;
+}
+#map_control, #satellite_control {
+    height: 80px;
+	float: right;
+	cursor: pointer;
+}
+#map_control div, #satellite_control div {
+	pointer-events: none;
+}
+#control_copyright {
+	position: absolute;
+	left: 18px;
+	top: 0px;
+	font-family: Tahoma;
+	font-size: 10pt;
+    font-weight: bold;
+}
+
+#locationTxt {
+	font-family: Tahoma;
+	font-size: 10pt;
+    font-weight: bold;
+    margin-right: 20px;	
+	cursor: pointer;
+}
+#scaleBarTxt {
+	font-family: Tahoma;
+	font-size: 10pt;
+    font-weight: bold;
+}
+#scaleBar {
+    background-color: white;
+    display: inline-block;
+    height: 8px;
+    width: 40px;
+	margin-bottom: 1px;
+}
+
+* html .mainmenu ul li { float: left; height: 1%; }
+.mainmenu li:hover ul, 
+.mainmenu  li.over ul { display: block; }
+
+.mainmenu
+{
+	float:left;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+}
+
+.mainmenu ul
+{
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.mainmenu ul li
+{
+	position: relative;
+	float:left;
+	margin: 3px;
+}
+.mainmenu ul li ul li
+{
+	margin: 0px;
+}
+
+.mainmenu li ul
+{
+	position: absolute;
+	left: 0;
+	top: 29px;
+	display: none;
+	float:left;
+}
+
+.vert
+{
+	float: none ! important;
+}
+#Print { 			background-position:-52px -2px; }
+#Print:hover { 		background-position:-52px -33px; }
+#PermaLinkControl { 				background-position:-83px -2px; }
+#PermaLinkControl:hover { 		background-color: #616262; }
+
+.Rules { 			background-position:-114px -2px; }
+.Rules:hover { 		background-position:-114px -33px; }
+.Button { 			background-position:-238px -2px; }
+.Button:hover {		background-color: #616262; }
+
+.AllocateSelect { 			background-position:-176px -2px; }
+.AllocateSelect:hover { background-color: #616262; }
+/*
+.AllocateSelected:hover .AllocateSelected_submenu, 
+.AllocateSelected.over .AllocateSelected_submenu { display: block ! important; }
+.mainmenu ul li:hover ul, 
+.mainmenu ul li.over ul { display: block; }
+.AllocateHover { 	background-position:-269px -33px; }
+*/
+
+.Allocate { 			background-position:-269px -2px; }
+.Allocate:hover { 	background-color: #616262; }
+
+.Line { 					background-position:-393px -2px; }
+.Line:hover { background-color: #616262; }
+
+.LineSelect { 				background-position:-331px -2px; }
+.LineSelect:hover { background-color: #616262; }
+
+.Pen { 				background-position:-207px -2px; }
+.Pen:hover { 		background-position:-207px -33px; }
+
+.Hover {
+	background-color: #616262 ! important;
+}
+/*
+#pointerRulers1 {
+	display: none;
+    left: 10px;
+    position: relative;
+    bottom: 0px;
+	background-image:url('the-selection-line.png');
+	background-repeat: no-repeat;
+	background-position: center center;
+    padding-left: 20px;
+	pointer-events: none;
+	color: grey;
+    font-weight: bold;
+}
+*/
+.pointerCurrent {
+	display: block;
+    left: 6px;
+    width: 29px;
+	height: 7px;
+    position: relative;
+	cursor: pointer;
+	background-image:url('icone.png');
+	background-repeat: no-repeat;
+	background-position:-2px -90px;
+/*
+    bottom: 0px;
+    text-align: inherit;
+	pointer-events: none;
+*/
+}
+#zoomVal
+{
+	position: absolute;
+    right: -18px;
+    top: -4px;
+	width: 24px;
+	height: 16px;
+	font-family: Tahoma;
+	font-size: 9pt;
+	text-align: center;
+	color: black;
+    font-weight: bold;
+	background-image:url('icone.png');
+	background-repeat: no-repeat;
+	background-position:-32px -86px;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+}
+
+.withMargin_1 li {
+	margin-top: -1px ! important;
+}
+
+.iconsBG {
+    background: none repeat scroll 0 0 white;
+    opacity: 0.2;
+	z-index: -1;
+    position: absolute;
+    top: 0px;	
+    height: 30px;
+    width: 29px;
+	margin-top: -3px;	
+	/*
+    padding: 3px;
+*/
+}
+.icon {
+	/*
+	height: 29px;
+	width: 29px;
+*/
+	display: block;
+	height: 29px;
+	width: 29px;
+	background-repeat: no-repeat;
+	cursor: pointer;
+	background-image:url('icone.png');
+	background-color: #929497;
+}
+.Plus {
+	width: 23px;
+	height: 24px;
+	background-position:-2px -2px;
+	margin: 6px 3px;
+}
+.Plus:hover {
+	background-position:-2px -28px;
+}
+.Minus {
+	width: 23px;
+	height: 24px;
+	background-position:-27px -2px;
+	margin: 6px 3px;
+}
+.Minus:hover {
+	background-position:-27px -28px;
+}
+
+.Rulers {
+	position: relative;
+	top: -3px;
+	display: block;
+	width: 11px;
+    margin-left: 9px;
+    margin-right: 6px;	
+	cursor: pointer;
+	pointer-events: none;
+	background-image:url('band.png');
+/*
+	height: 78px;
+	background-repeat: no-repeat;
+*/
+}
+/*
+.Rulers:hover #pointerRulers1, 
+.Rulers.over #pointerRulers1 { display: block; }
+*/
+#RulersBG {
+    background: none repeat scroll 0 0 white;
+    opacity: 0.3;
+    position: absolute;
+    width: 29px;
+/*
+    height: 78px;
+    margin-bottom: 0;
+    margin-top: -8px;
+    padding-bottom: 8px;
+    padding-top: 8px;
+*/	
+}
+#RulersCursorBG {
+    position: absolute;
+	bottom: 8px;
+    top: 1px;
+    width: 23px;
+    height: 78px;
+	cursor: pointer;
+}
+
+
+.zoomBG {
+	background: none repeat scroll 0 0 white;
+	opacity: 0.3;
+	height: 60px;
+	margin-top: 3px;
+	margin-left: 3px;
+	position: absolute;
+	width: 29px;
+}
+.whiteBG {
+	background: white ! important;
+}
+.whiteColor {
+	color: white ! important;
+}
+
+.textMenuVert
+{
+	float:left;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+}
+
+.textMenuVert ul li span 
+{
+	float:left;
+	text-align:center;
+	width:80px;
+	height: 20px;
+	cursor: pointer;
+	background: #CCCCCC;
+	/*
+	color: black;
+	font-size:16px;
+	padding: 5px 0 5px 0;
+	background: #CCCCCC;
+	*/
+}
+
+.textMenuVert ul
+{
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.textMenuVert ul li
+{
+	position: relative;
+	float:left;
+}
+
+.textMenuVert ul li ul, #textMenuVert ul li ul li
+{
+	/*width:130px;*/
+}
+
+.textMenuVert li ul
+{
+	position: absolute;
+	left: 0px;
+	top: 20px;
+	overflow: hidden;
+	display: none;
+	float:left;
+}
+
+* html .textMenuVert ul li { float: left; height: 1%; }
+* html .textMenuVert ul li a { height: 1%; }
+
+.textMenuVert li:hover ul, 
+.textMenuVert  li.over ul { display: block; }
+
+.arrow {
+    position: relative;
+	background-image:url('icone.png');
+	background-repeat: no-repeat;
+}
+.right {
+	float: right;
+    position: absolute;
+    right: 5px;
+}
+.arrVert {
+	margin-top: 8px;
+	width: 7px ! important;
+	height: 4px ! important;
+	background-position:-37px -56px ! important;
+	/*
+	margin: 6px 3px;
+	*/
+}
+.arrHor {
+    bottom: 30px;
+    left: 7px;	
+	width: 4px ! important;
+	height: 7px ! important;
+	background-position:-27px -54px;
+}
+
+.divMenu
+{
+	position: relative;
+	float:left;
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+}
+
+.divMenu ul li .divItem 
+{
+	float:left;
+	color: black;
+	font-size:16px;
+	text-align:center;
+	width:80px;
+	padding: 5px 0 5px 0;
+	background: #CCCCCC;
+	cursor: pointer;
+	margin: 2px;
+}
+.divMenu ul
+{
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.divMenu ul li
+{
+	float:left;
+}
+
+.divMenu ul li ul, #divMenu ul li ul li
+{
+	/*width:130px;*/
+}
+
+.divMenu li ul
+{
+	/*
+	position: absolute;
+	*/
+	left: 0;
+	top: 29px;
+	display: none;
+	float: right;
+}
+
+* html .divMenu ul li { float: left; height: 1%; }
+* html .divMenu ul li a { height: 1%; }
+
+.divMenu li:hover ul, 
+.divMenu  li.over ul { display: block; }
+
+.divItem
+{
+	padding-top: 120px;
+	height: 80px;
+	float: none ! important;
+	padding: 0px ! important;
+	margin: 0px ! important;
+}
+.divText {
+    position: relative;
+    bottom: 20px;
+    right: 0px;
+    width: 80px;
+    text-align: center;
+	font-family: Tahoma;
+	font-size: 10pt;
+}
+.satelliteIcon
+{
+    background-image: url("icone.png") ! important;
+    background-position:-58px -64px ! important;
+}
+
+.mapIcon
+{
+    background-image: url("icone.png") ! important;
+    background-position:-222px -64px ! important;
+}
