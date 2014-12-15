@@ -42,12 +42,15 @@ L.TileLayer.WebGLHeatMap = L.Class.extend({
         this.canvas = c;
         
 		/* This needs to be fixed somehow. 'moveend' triggers this._plot 3 times for each window resize. */
-		map.on("moveend", this._plot, this);
+		map.on("moveend", this.redraw, this);
 		
+        if (map.options.zoomAnimation && L.Browser.any3d) {
+            map.on('zoomanim', this._animateZoom, this);
+        }
 		/* hide layer on zoom, because it doesn't animate zoom */
-		map.on("zoomstart", this._hide, this);
-		map.on("zoomend", this._show, this);
-		
+		// map.on("zoomstart", this._hide, this);
+		// map.on("zoomend", this._show, this);
+/*
 		if (this.options.autoresize) {
 			//a timeout should keep the function from running constantly while resizing
 			var timeout;
@@ -59,15 +62,18 @@ L.TileLayer.WebGLHeatMap = L.Class.extend({
 				}, 250);
 			};
 		}
-		
-        this._plot();
+*/
+        this.redraw();
     },
 	
 	onRemove: function (map) {
         map.getPanes().overlayPane.removeChild(this.canvas);
-        map.off("moveend", this._plot, this);
-		map.off("zoomstart", this._hide, this);
-		map.off("zoomend", this._show, this);
+        map.off("moveend", this.redraw, this);
+		// map.off("zoomstart", this._hide, this);
+		// map.off("zoomend", this._show, this);
+        if (map.options.zoomAnimation) {
+            map.off('zoomanim', this._animateZoom, this);
+        }
     },
 	
 	_hide : function () {
@@ -98,15 +104,18 @@ L.TileLayer.WebGLHeatMap = L.Class.extend({
 					point = map.latLngToContainerPoint(latlng);
                 heatmap.addPoint(
                         Math.floor(point.x),
-                        Math.floor(point.y),
-                        this._scale(latlng),
-						dataVal[2]);
+                        Math.floor(point.y)
+                        // ,
+                        // this._scale(latlng),
+						// dataVal[2]
+                        );
             }
             heatmap.update();
             heatmap.display();
         }
+        this._frame = null;
 	},
-	
+/*
 	_scale: function (latlng) {
 		// necessary to maintain accurately sized circles
 		// to change scale to miles (for example), you will need to convert 40075017 (equatorial circumference of the Earth in metres) to miles
@@ -117,18 +126,18 @@ L.TileLayer.WebGLHeatMap = L.Class.extend({
         
 		return Math.max(Math.round(point.x - point2.x), 1);
     },
-	
+*/
 	resize: function () {
 		//helpful for maps that change sizes
 		var mapsize = this.map.getSize();
 		this.canvas.width = mapsize.x;
 		this.canvas.height = mapsize.y;
-		
+
 		this.WebGLHeatMap.adjustSize();
-		
-		this._plot();
+
+		this.redraw();
 	},
-	
+
     addDataPoint: function (lat, lon, value) {
         this.data.push( [ lat, lon, value / 100 ] );
     },
@@ -143,8 +152,22 @@ L.TileLayer.WebGLHeatMap = L.Class.extend({
 	},
 	
 	update: function () {
-		this._plot();
-	}
+		this.redraw();
+	},
+
+    redraw: function () {
+        if (!this._frame && !this.map._animating) {
+            this._frame = L.Util.requestAnimFrame(this._plot, this);
+        }
+        return this;
+    },
+
+    _animateZoom: function (e) {
+        var scale = this.map.getZoomScale(e.zoom),
+            offset = this.map._getCenterOffset(e.center)._multiplyBy(-scale).subtract(this.map._getMapPanePos());
+
+        this.canvas.style[L.DomUtil.TRANSFORM] = L.DomUtil.getTranslateString(offset) + ' scale(' + scale + ')';
+    }
 });
 
 L.TileLayer.webglheatmap = function (options) {
