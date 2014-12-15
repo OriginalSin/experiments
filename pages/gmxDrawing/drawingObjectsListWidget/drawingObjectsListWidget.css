@@ -1,0 +1,32 @@
+.drawingObjectsListWidget {
+    min-width: 230px;
+}
+
+.drawingObjectsListWidget-noFeatures {
+    width: 100%;
+    text-align: center;
+}
+
+.drawingObjectsListNode {
+    padding: 4px;
+    margin-bottom: 4px;
+}
+
+.drawingObjectsListNode-checkableArea {
+    float: left;
+    cursor: pointer;
+}
+
+.drawingObjectsListNode-checkIcon {
+    float: left;
+}
+
+.drawingObjectsListNode-info {
+    padding: 1px;
+    float: left;
+}
+
+.drawingObjectsListNode-removeIcon, .drawingObjectsListNode-styleIcon {
+    float: right;
+    cursor: pointer;
+}
