@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Leaflet debug page</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+    <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
+
+    <script src="http://makinacorpus.github.io/Leaflet.RestoreView/leaflet.restoreview.js"></script>
+    
+	<link rel="stylesheet" href="http://leaflet.github.io/Leaflet.markercluster/dist/MarkerCluster.css" />
+	<link rel="stylesheet" href="http://leaflet.github.io/Leaflet.markercluster/dist/MarkerCluster.Default.css" />
+	<script src="http://leaflet.github.io/Leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+    </style>
+
+</head>
+<body>
+
+	<div id="map"></div>
+	<script type="text/javascript">
+
+		var map = L.map('map');
+		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+			maxZoom: 18,
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+		}).addTo(map);
+        if (!map.restoreView()) {
+            map.setView([55.726456, 37.760009], 9);
+        }
+
+		var markers = new L.MarkerClusterGroup({
+            showCoverageOnHover: false
+        });
+		map.addLayer(markers);
+
+		var items = {};
+
+        L.gmx.loadLayers([
+            {mapID: '6VYUE', layerID: 'D9E2627441D844168F2DF44E749D9453'}
+        ]).then(function(testLayer) {
+            
+            var observer = testLayer.addObserver({
+                callback: function(data) {
+                    markers.clearLayers();
+                    var arr = [];
+                    for (var i = 0, len = data.added.length; i < len; i++) {
+                        var vectorTileItem = data.added[i],
+                            id = vectorTileItem.id,
+                            marker = items[id];
+                        if (!marker) {
+                            var item = vectorTileItem.properties,
+                                geo = item[item.length - 1],
+                                title = item[0],
+                                parsedStyle = vectorTileItem.item.parsedStyleKeys,
+                                p = geo.coordinates,
+                                latlng = L.Projection.Mercator.unproject({x: p[0], y: p[1]});
+                            marker = new L.Marker(latlng, {
+                                icon: L.icon({
+                                    iconUrl: parsedStyle.iconUrl
+                                })
+                            });
+                            marker.bindPopup('',
+                                {
+                                    autoPan: false,
+                                    properties: vectorTileItem.properties,
+                                    gmx: vectorTileItem.gmx,
+                                    maxWidth: 560
+                                }
+                            );
+                            marker.on('popupopen', function(ev) {
+                                var popup = ev.popup,
+                                    props = testLayer.getItemProperties(popup.options.properties),
+                                    container = L.DomUtil.create('div', 'myPopup'),
+                                    prop = L.DomUtil.create('div', 'myName', container);
+                                    image = L.DomUtil.create('img', 'myImage', container);
+                                
+                                prop.innerHTML = '<h3>' + props['Наименование'] + '</h3>';
+                                L.extend(image, {
+                                    width: 400,
+                                    galleryimg: 'no',
+                                    onselectstart: L.Util.falseFn,
+                                    onmousemove: L.Util.falseFn,
+                                    onload: function(ev) {
+                                        popup.update();
+                                    },
+                                    src: props['Фото1']
+                                });
+                                prop = L.DomUtil.create('div', 'myName', container);
+                                prop.innerHTML = '<b>Адрес:</b> ' + props['Адрес современный'];
+                                prop = L.DomUtil.create('div', 'myName', container);
+                                prop.innerHTML = '<b>Категория:</b> ' + props['Категория'];
+                                popup.setContent(container);
+                            });
+                            items[id] = marker;
+                        }
+                        arr.push(marker);
+                    }
+                    markers.addLayers(arr);
+                }
+                ,filters: ['styleFilter']
+                ,type: 'resend'
+            });
+            var updateBbox = function() {
+                var screenBounds = map.getBounds(),
+                    p1 = screenBounds.getNorthWest(),
+                    p2 = screenBounds.getSouthEast(),
+                    bbox = gmxAPIutils.bounds([[p1.lng, p1.lat], [p2.lng, p2.lat]]);
+                observer.setBounds(bbox);
+            };
+            map.on('moveend', updateBbox);
+            testLayer.setFilter(function() {
+                return false;
+            });
+            map.addLayer(testLayer);
+		});
+
+	</script>
+</body>
+</html>
