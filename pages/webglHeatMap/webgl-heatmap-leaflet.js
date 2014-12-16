@@ -97,6 +97,7 @@ L.TileLayer.WebGLHeatMap = L.Class.extend({
 		heatmap.clear();
 		L.DomUtil.setPosition(this.canvas, map.latLngToLayerPoint(map.getBounds().getNorthWest()));
         var dataLen = this.data.length;
+console.log('_plot', dataLen);
 		if (dataLen) {
             for (var i = 0; i < dataLen; i++) {
 				var dataVal = this.data[i],
