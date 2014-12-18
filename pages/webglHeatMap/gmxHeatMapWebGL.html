@@ -49,7 +49,7 @@
 <body>
 	<div id="controls">
 		<div id="slider"></div>
-		<div id="timeInfo"><span id="curDate">Loading data...</span><span id="auto"><input type="checkbox" id="autochkbox" /> auto</span></div>
+		<div id="timeInfo"><span id="curDate">Loading data...</span><span id="auto"><input type="checkbox" checked id="autochkbox" /> auto</span></div>
 	</div>
 
 	<div id="map" style="width: 100%; height: 100%"></div>
@@ -115,8 +115,8 @@
                 }
             }
             autochkbox.onchange = chkAuto;
-
-            hotspotLayer._gmx.dataManager.preloadTiles(ddt1, ddt2).then(function() {
+            
+//            hotspotLayer._gmx.dataManager.preloadTiles(ddt1, ddt2).then(function() {
                 updateInfo(new Date(ddt2.valueOf() - oneDay));
                 document.getElementById('auto').style.display = 'inline';
                 $('#slider').slider({
@@ -130,7 +130,8 @@
                 });
                 var zn = $('#slider').slider("value");
                 nextDay(zn);
-            });
+//            });
+            
         })
 
 	</script>
