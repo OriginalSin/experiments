@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html prefix="og: http://ogp.me/ns#" xmlns="http://www.w3.org/1999/xhtml" xml:lang="ru-ru" lang="ru-ru" dir="ltr">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<script src="http://code.jquery.com/jquery-1.10.2.js"></script> 
+<style type="text/css">
+    .mapSelect li span {
+        cursor: pointer;
+    }
+</style>
+
+<body>
+<div class="custom_maps"  >
+	<p><iframe name="mapbox" src="MultipleMapsDemoScanex.html" frameborder="0" scrolling="no" width="100%" height="490" id="mapbox">
+		<p>iframes are not supported by your browser.</p>
+	</iframe>
+</p>
+<div class="mapinfo"><a href="http://maps.kosmosnimki.ru/api/index.html?D4BA4956CC2E4A818F0AC66F156C2713" target="_blank"> Оперативный спутниковый мониторинг судов с использованием данных АИС и ледовая разведка </a>
+	</div>
+<div class="controls">
+	
+	<ul class="mapSelect">
+		<li><span id="ice">ice<span>
+		</li>
+		<li><span id="ndvi">ndvi<span>
+		</li>
+		<li><span id="mosoblkult">mosoblkult<span>
+		</li>
+		<li><span id="flood">flood<span>
+		</li>
+	</ul>
+</div>
+</div>
+ 
+<script language="javascript" type="text/javascript"> 
+    $(".mapinfo").html("<a href=\"http://maps.kosmosnimki.ru/api/index.html?D4BA4956CC2E4A818F0AC66F156C2713\" target=\"_blank\"> Оперативный спутниковый мониторинг судов с использованием данных АИС и ледовая разведка </a>"); 
+ $("span").click(function () { 
+     
+    var content = $("#mapbox")[0],
+        id = $(this).attr("id"),
+        context = content.contentWindow;
+
+    context.postMessage(id, "http://kosmosnimki.ru");
+
+    if (id == "ice") 
+        $(".mapinfo").html("<a href=\"http://maps.kosmosnimki.ru/api/index.html?D4BA4956CC2E4A818F0AC66F156C2713\" target=\"_blank\"> Оперативный спутниковый мониторинг судов с использованием данных АИС и ледовая разведка </a>"); 
+    else if (id == "ndvi")  
+        $(".mapinfo").html("<a href=\"http://maps.kosmosnimki.ru/api/index.html?YIT5H\" target=\"_blank\">Мониторинг объектов сельского хозяйства с использованием NDVI</a>"); 
+    else if (id == "mosoblkult") 
+        $(".mapinfo").html("<a href=\"http://maps.kosmosnimki.ru/api/index.html?6VYUE\" target=\"_blank\">Интерактивная карта объектов природного наследия</a>"); 
+    else if (id == "flood") 
+        $(".mapinfo").html("<a href=\"http://maps.kosmosnimki.ru/api/index.html?532875BB8F4B43F18529CBC78BA3580C\" target=\"_blank\">Мониторинг паводков на реках России для МЧС</a>"); 
+ }); 
+ 
+</script> 
+ 
+</body>
+</html>

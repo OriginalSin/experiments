@@ -1,15 +1,15 @@
 /*
- (c) 2014, Sergey Alekseev
+ (c) 2014, Sergey Alekseev salekseev@scanex.ru
  Leaflet.HeatMapWebGL, plugin for Gemixer layers.
 */
 L.HeatMapWebGL = L.Class.extend({
 
     options: {
         pane: 'markerPane',
-        size: 50,
+        //size: 25,
         opacity: 0.1,
         gradientTexture: false,
-        alphaRange: 1
+        alphaRange: 0.2
     },
 
     setData: function (data) {
@@ -22,7 +22,7 @@ L.HeatMapWebGL = L.Class.extend({
     },
 
     redraw: function () {
-        if (!this._frame && !this._map._animating) {
+        if (this._map && !this._frame && !this._map._animating) {
             this._frame = L.Util.requestAnimFrame(this._redraw, this);
         }
         return this;
@@ -36,18 +36,18 @@ L.HeatMapWebGL = L.Class.extend({
         }
         map.getPanes()[this.options.pane].appendChild(this._canvas);
 
-        map.on('moveend', this._reset, this);
+        map.on('moveend', this.redraw, this);
         if (map.options.zoomAnimation && L.Browser.any3d) {
             map.on('zoomanim', this._animateZoom, this);
         }
 
-        this._reset();
+        this._redraw();
     },
 
     onRemove: function (map) {
         map.getPanes()[this.options.pane].removeChild(this._canvas);
 
-        map.off('moveend', this._reset, this);
+        map.off('moveend', this.redraw, this);
 
         if (map.options.zoomAnimation) {
             map.off('zoomanim', this._animateZoom, this);
@@ -64,7 +64,10 @@ L.HeatMapWebGL = L.Class.extend({
 
     _animateZoom: function (e) {
         var scale = this._map.getZoomScale(e.zoom),
-            offset = this._map._getCenterOffset(e.center)._multiplyBy(-scale).subtract(this._map._getMapPanePos());
+            pixelBoundsMin = this._map.getPixelBounds().min;
+
+        var offset = this._map._getCenterOffset(e.center)._multiplyBy(-scale).subtract(this._map._getMapPanePos());
+        if (pixelBoundsMin.y < 0) offset.y += pixelBoundsMin.multiplyBy(-scale).y;
 
         this._canvas.style[L.DomUtil.TRANSFORM] = L.DomUtil.getTranslateString(offset) + ' scale(' + scale + ')';
     },
@@ -87,7 +90,7 @@ L.HeatMapWebGL = L.Class.extend({
         });
     },
 
-    _updateBbox: function () {
+    _updateBbox: function (zoom) {
         var _map = this._map,
             screenBounds = _map.getBounds(),
             southWest = screenBounds.getSouthWest(),
@@ -102,47 +105,42 @@ L.HeatMapWebGL = L.Class.extend({
         if (center > ww) center -= ww2;
         else if (center < -ww) center += ww2;
 
-        this.mInPixel = gmxAPIutils.getPixelScale(_map._zoom);
+        this.mInPixel = gmxAPIutils.getPixelScale(zoom || _map._zoom);
         this._ctxShift = [(w - center) * this.mInPixel, m2.y * this.mInPixel];
     },
 
-    _reset: function () {
+    _redraw: function () {
         var _map = this._map,
             size = _map.getSize(),
             _canvas = this._canvas,
             mapTop = _map._getTopLeftPoint(),
             topLeft = _map.containerPointToLayerPoint([0, mapTop.y < 0 ? -mapTop.y : 0]);
 
-        this._updateBbox();
         L.DomUtil.setPosition(_canvas, topLeft);
         _canvas.width = size.x; _canvas.height = size.y;
         this.WebGLHeatMap.adjustSize();
-        this.redraw();
-    },
 
-    _redraw: function () {
         var heatmap = this.WebGLHeatMap;
         heatmap.clear();
         if (this.data) {
-            var dataLen = this.data.length;
-            var out = [],
-                size = this.options.size,
-                opacity = this.options.opacity,
-                _zoom = this._map._zoom,
+            this._updateBbox();
+            var dataLen = this.data.length,
+                valScale = this._map._zoom * 2,
+                options = this.options,
                 ctxShift = this._ctxShift,
                 mInPixel = this.mInPixel;
             
             for (var i = 0; i < dataLen; i++) {
                 var it = this.data[i].properties,
+                    val = options.size || it[2] * valScale || 1,
                     geo = it[it.length - 1],
                     coord = geo.coordinates;
+
                 heatmap.addPoint(
                     Math.floor(coord[0] * mInPixel + ctxShift[0]),
-                    Math.floor(ctxShift[1] - coord[1] * mInPixel)
-                    ,
-                    20
-                    // ,
-                    // opacity
+                    Math.floor(ctxShift[1] - coord[1] * mInPixel),
+                    val,
+                    options.opacity
                 );
             }
             heatmap.update();

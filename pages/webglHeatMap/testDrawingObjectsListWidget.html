@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>GmxDrawing Leaflet Quick Start Guide Example</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+
+	<script src="http://scanex.github.io/gmxControls/build/L.Control.gmxDrawing-dev.js"></script>
+    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxIcon.css" />
+    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxDrawing.css" />
+    <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
+    <link rel="stylesheet" href="http://scanex.github.io/gmxDrawing/css/L.gmxDrawing.css" />
+	<script src="http://scanex.github.io/gmxDrawing/src/L.GmxDrawing.js"></script>
+
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/translations.js"></script>
+    
+	<script src="externals/thorax.js"></script>
+    <link rel="stylesheet" href="externals/styles.css" />
+     
+    <link rel="stylesheet" href="externals/drawingObjectsListWidget.css" />
+	<script src="externals/drawingObjectsListWidget.js"></script>
+
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+        
+        #infoPanel {
+            position: absolute;
+			left: 0px;
+			right: 0px;
+			top: 21px;
+            text-align: center;
+			z-index: 1;
+        }
+        
+        #info {
+			background-color: #ffffff;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+            padding: 10px;
+        }
+        .leaflet-gmx-drawingObjectsListWidget {
+            background-color: rgba(255,255,255,0.5);
+            border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+	<div id="map"></div>
+    <div id="infoPanel">
+        <span id="info">
+                Test nsGmx.DrawingObjectsListWidget
+        </span>
+    </div>
+
+	<script>
+		var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+			maxZoom: 18,
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+		});
+		var map = new L.Map('map', {layers: [osm], center: new L.LatLng(50, 20), zoom: 3});
+
+        var eventShow = function (ev) {
+            //console.log(arguments);
+        };
+        map.gmxDrawing
+            .on('drawstart', eventShow)
+            .on('drawstop', eventShow)
+            .on('add', eventShow)
+            .on('edit', eventShow)
+            .on('remove', eventShow)
+            .on('removefrommap', eventShow)
+            .on('addtomap', eventShow)
+            .on('dragstart', eventShow)
+            .on('drag', eventShow)
+            .on('dragend', eventShow);
+
+        var drawPolygon = map.gmxDrawing.add(L.polygon(
+            [
+             [ [50.0, 20.0], [61.0, 20.0], [61.0, 33.0], [30.0, 33.0], [50.0, 20.0] ]
+           ]
+         ));
+
+        var drawPolyline = map.gmxDrawing.add(L.polyline(
+            [
+             [50.0, 30.0], [64.0, 35.0], [71.5, 53.0], [44.0, 43.0]
+            ]
+         ), {pointStyle:{shape: 'circle'}, lineStyle:{color: '#ff0000'}} );
+
+        var drawRectangle = map.gmxDrawing.add(L.rectangle(
+            [
+             [20.0, 40.0], [54.0, 65.0]
+            ]
+         ), {pointStyle:{shape: 'circle', size: 12}, lineStyle:{fill: true, color: '#00ff00'}} );
+
+        var latlng = new L.LatLng(65.0, 40.0),
+            marker = L.marker(latlng, {draggable: true, title: 'Text example'}),
+            drawPoint = map.gmxDrawing.add(marker, {});
+
+        L.Control.gmxDrawingObjectsListWidget = L.Control.extend({
+            options: {
+                position: 'topright',
+                id: 'gmxDrawingObjectsListWidget'
+            },
+
+            onAdd: function (map) {
+                if (!map) return;
+                var className = 'leaflet-gmx-drawingObjectsListWidget',
+                    container = L.DomUtil.create('div', className);
+                    
+                    var drawingObjectsListWidget = new nsGmx.DrawingObjectsListWidget(container, {
+                        drawingManager: map.gmxDrawing
+                    });
+                return container;
+            }
+        });
+
+        map.addControl(new L.Control.gmxDrawingObjectsListWidget());
+        map.addControl(new L.Control.gmxDrawing());
+
+	</script>
+</body>
+</html>
