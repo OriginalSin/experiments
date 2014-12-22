@@ -132,7 +132,7 @@ L.HeatMapWebGL = L.Class.extend({
             
             for (var i = 0; i < dataLen; i++) {
                 var it = this.data[i].properties,
-                    val = options.size || it[2] * valScale || 1,
+                    val = options.size || it[3] * valScale || 1,
                     geo = it[it.length - 1],
                     coord = geo.coordinates;
 

@@ -71,15 +71,15 @@
             document.getElementById('curDate').innerHTML = dateStr;
         }
         
-        var startDate = new Date('2013/11/01'),
+        var startDate = new Date('2013/03/28'),
             oneDay = 1000*60*60*24,	// milliseconds in one day
             now = startDate.getTime(),
             ddt1 = new Date( now - now % oneDay - oneDay), //beginning of the UTC day
-            ddt2 = new Date(ddt1.getTime() + 20*oneDay);
+            ddt2 = new Date(ddt1.getTime() + 300*oneDay);
 
         var autochkbox = document.getElementById('autochkbox');
         
-        L.gmx.loadLayer('AZR6A', 'C13B4D9706F7491EBC6DC70DFFA988C0', {
+        L.gmx.loadLayer('NDFYK', '3E88643A8AC94AFAB4FD44941220B1CE', {
             beginDate: new Date(ddt2.valueOf() - oneDay),
             endDate: ddt2
         }).then(function(hotspotLayer) {
