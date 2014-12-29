@@ -1,6 +1,14 @@
 experiments
 ===========
 
+Пример|Описание|Примечание
+------|---------|-----------
+[gmxHeatMapWebGL.html](http://originalsin.github.io/experiments/pages/webglHeatMap/gmxHeatMapWebGL.html)| [WebGL Heatmap](http://leafletjs.com/plugins.html)| High performance Javascript heatmap plugin using WebGL
+[restoreView.html](http://originalsin.github.io/experiments/pages/webglHeatMap/restoreView.html)| [Leaflet.RestoreView](https://github.com/makinacorpus/Leaflet.RestoreView)| Stores and restores map view using localStorage.
+[testIframe.html](http://kosmosnimki.ru/demo/testIframe.html)| Листание карт|
+[testDrawingObjectsListWidget.html](http://originalsin.github.io/buildAPIV2/examples/testDrawingObjectsListWidget.html)|Подключение виджета drawing objects.
+
+
 Работы с web worker
 ### Методы
 Метод|Синтаксис|Возвращаемое значение|Описание
