@@ -17,6 +17,7 @@
     <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
     <link rel="stylesheet" href="http://scanex.github.io/gmxDrawing/css/L.gmxDrawing.css" />
 	<script src="http://scanex.github.io/gmxDrawing/src/L.GmxDrawing.js"></script>
+	<script src="http://originalsin.github.io/Leaflet.TileLayer.Mercator/src/TileLayer.Mercator.js"></script>
 
 	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 	<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
@@ -109,10 +110,12 @@
     </div>
 
 	<script>
-		
-		var cloudmadeUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
-			cloudmade = new L.TileLayer(cloudmadeUrl, {maxZoom: 18}),
-			map = new L.Map('map', {layers: [cloudmade], zoomControl: false, center: new L.LatLng(55, 39), zoom: 7});
+        var rumap = L.tileLayer.Mercator('http://{s}.tile.cart.kosmosnimki.ru/m/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            maxNativeZoom: 17,
+            attribution: 'Scanex.ru'
+        }),
+        map = new L.Map('map', {layers: [rumap], zoomControl: false, center: new L.LatLng(55, 39), zoom: 7});
 
         var drawRectangle = map.gmxDrawing.add(L.rectangle(
             [
@@ -234,6 +237,7 @@
                         if (autochkbox.checked) setTimeout(goNext, 100);
                     })
                     .on('error', function(ev) {
+                        autochkbox.checked = false;
                         console.log('Error in quicklook: ', item.id);
                     });
 
@@ -361,7 +365,6 @@
         find.onclick = startFind;
         map.gmxDrawing
             .on('removefrommap', function (ev) {
-//console.log('removefrommap', arguments);
                 if (find.length < 1) find.style.display = 'none';
             })
             .on('addtomap', function (ev) {
