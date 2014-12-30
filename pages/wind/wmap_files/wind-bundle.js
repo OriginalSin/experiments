@@ -2972,7 +2972,8 @@ MapMask.prototype.move = function(animator) {
 };
 */
 function isAnimating() {
-	return document.getElementById('animating').checked;
+	return true;
+	//return document.getElementById('animating').checked;
 }
 
 // function showCities() {
