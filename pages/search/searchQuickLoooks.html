@@ -29,6 +29,11 @@
      
     <link rel="stylesheet" href="../externals/drawingObjectsListWidget.css" />
 	<script src="../externals/drawingObjectsListWidget.js"></script>
+	
+	<script src="../externals/jquery-ui/jquery-ui.min.js"></script>
+	
+	<link rel="stylesheet" href="../externals/iris/iris.css" />
+	<script src="../externals/iris/iris.js"></script>
 
     <style>
         html, body, #map {
@@ -98,6 +103,7 @@
     </div>
 
 	<script>
+		
 		var cloudmadeUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
 			cloudmade = new L.TileLayer(cloudmadeUrl, {maxZoom: 18}),
 			map = new L.Map('map', {layers: [cloudmade], zoomControl: false, center: new L.LatLng(46, 33), zoom: 7});
@@ -246,6 +252,65 @@
         
         document.getElementById("next").onclick = goNext;
         //currentImage = showOneScene(currentID);
+		
+		var pickStyle = function (feature){
+			var dlg = $('<div></div>', {title: 'Choose color'})
+				.css({
+					display: 'none',
+					zIndex: 20000
+				})
+				.appendTo('body');
+						
+			var linesStyle = feature.getLinesStyle();
+			var pointsStyle = feature.getPointsStyle();
+			var p = $('<input>', {type: 'text', value: linesStyle.color})
+				.css({
+					width: 200
+				})
+				.appendTo(dlg);
+			
+			p.iris({
+				hide: false,
+				width: 200,
+				change: function(e, ui){				
+					feature.setLinesStyle({
+						color: ui.color.toString()
+					});
+					feature.setPointsStyle({
+						color: ui.color.toString()
+					});
+				}
+			});
+						
+			$(dlg).dialog({
+				resizable: false,				
+				modal: true,	
+				width: 250,
+				closeText: 'Close',
+				buttons: [
+					{
+						text: 'OK',
+						click: function(){											
+							$(this).dialog('close');							
+							$(this).remove();
+						}
+					},
+					{
+						text: 'Cancel',
+						click: function(){
+							feature.setLinesStyle({
+									color: linesStyle.color
+							});
+							feature.setPointsStyle({
+								color: pointsStyle.color
+							});
+							$(this).dialog('close');							
+							$(this).remove();
+						}
+					}
+				]
+			});	
+		};
         
         L.Control.gmxDrawingObjectsListWidget = L.Control.extend({
             options: {
@@ -261,6 +326,9 @@
                     var drawingObjectsListWidget = new nsGmx.DrawingObjectsListWidget(container, {
                         drawingManager: map.gmxDrawing
                     });
+					$(drawingObjectsListWidget).on('styleButtonClick', function(e, feature){
+						pickStyle(feature);
+					});
                 return container;
             }
         });
