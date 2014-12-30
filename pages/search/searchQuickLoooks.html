@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Leaflet Quick Start Guide Example</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+
+	<script src="http://scanex.github.io/Leaflet.imageTransform/src/L.ImageTransform.js"></script>
+
+	<script src="http://scanex.github.io/gmxControls/build/L.Control.gmxDrawing-dev.js"></script>
+    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxIcon.css" />
+    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxDrawing.css" />
+    <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
+    <link rel="stylesheet" href="http://scanex.github.io/gmxDrawing/css/L.gmxDrawing.css" />
+	<script src="http://scanex.github.io/gmxDrawing/src/L.GmxDrawing.js"></script>
+
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/translations.js"></script>
+    
+	<script src="../externals/thorax.js"></script>
+    <link rel="stylesheet" href="../externals/styles.css" />
+     
+    <link rel="stylesheet" href="../externals/drawingObjectsListWidget.css" />
+	<script src="../externals/drawingObjectsListWidget.js"></script>
+
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+        
+        #infoPanel {
+            position: absolute;
+			left: 0px;
+			right: 0px;
+			top: 21px;
+            text-align: center;
+			z-index: 1;
+        }
+        
+        #info {
+			background-color: #ffffff;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+            padding: 10px;
+        }
+        .leaflet-gmx-drawingObjectsListWidget {
+            background-color: rgba(255,255,255,0.5);
+            border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+            padding: 10px;
+        }
+        #controls {
+            position: absolute;
+			right: 14px;
+			bottom: 14px;
+			z-index: 1;
+			background-color: #ffffff;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+        }
+        
+        #controls button {
+            border-radius: 5px;
+            
+        }
+        
+        #controls > div{
+            padding: 6px;
+        }
+        
+    </style>
+</head>
+<body>
+	<div id="controls">
+		<div>
+            <button id="find">Find</button>
+            <div id="result">
+                <button id="prev">Prev</button>
+                <button id="next">Next</button> <input type="checkbox" id="autochkbox" /> auto
+                <span id="timeInfo"></span>
+            </div>
+        </div>
+	</div>
+	<div id="map"></div>
+    <div id="infoPanel">
+        <span id="info">
+                Search images by rectangle (change geometry and click `Find` button)
+        </span>
+    </div>
+
+	<script>
+		var cloudmadeUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+			cloudmade = new L.TileLayer(cloudmadeUrl, {maxZoom: 18}),
+			map = new L.Map('map', {layers: [cloudmade], zoomControl: false, center: new L.LatLng(46, 33), zoom: 7});
+
+        var drawRectangle = map.gmxDrawing.add(L.rectangle(
+            [
+                [55.178867663281984, 39.7265625],
+                [56.07203557180087, 37.96875]
+            ]
+         ), {pointStyle:{shape: 'circle', size: 12}, lineStyle:{fill: true, color: '#00ff00'}} );
+           
+        var items = [],
+            quicklooksJson = 'http://search.kosmosnimki.ru/QuicklooksJson.ashx ',
+            infoPrefix = 'http://search.kosmosnimki.ru/QuickLookInfo.aspx?id=',
+            currentID = 0,
+            currentImage = null,
+            autochkbox = document.getElementById('autochkbox'),
+            result = document.getElementById("result"),
+            getData = function(geo) {
+                L.gmxUtil.sendCrossDomainPostRequest(quicklooksJson, {
+                    WrapStyle: 'message'
+                    ,satellites: 'WV03,WV02,GE01,Pleiades,QB02,KOMPSAT3,IK-2,SPOT 6,SPOT 7,WV01,EROS-B,EROS-A1,SPOT 5'
+                    ,spot5products: '5,4'
+                    ,archive: 'global'
+                    ,min_date: '2014-01-01'
+                    ,max_date: '2014-12-30'
+                    ,min_cloud_cover: 0
+                    ,max_cloud_cover: 100
+                    ,every_year: false
+                    ,min_off_nadir: 0
+                    ,max_off_nadir: 60
+                    ,product: false
+                    ,source: true
+                    ,wkt: geo
+                }, function(response) {
+                    //console.log(arguments)
+                    items = [];
+                    if (response && response.Status === 'ok' && response.Result) {
+                        for (var i = 0, len = response.Result.length; i < len; i++) {
+                            var item = response.Result[i];
+                            items.push(item);
+                        }
+                    }
+                    result.style.display = items.length ? 'block' : 'none';
+                    currentImage = showOneScene(0);
+                });
+            },
+            transformCoordinates = function(pol) {
+                var arr = [];
+                for (var i = 0, len = pol.length; i < len; i++) {
+                    arr.push([pol[i][1], pol[i][0]]);
+                }
+                return arr;
+            },
+            goNext = function() {
+                if (currentImage) map.removeLayer(currentImage);
+                currentID++;
+                currentImage = showOneScene(currentID);
+            },
+            
+            showOneScene = function(num) {
+                var len = items.length;
+                if (len < 1) return;
+                if (num < 0) num = currentID = len - 1;
+                if (num >= len) num = currentID = 0;
+                var item = items[num];
+                    url = 'http://search.kosmosnimki.ru/QuickLookImage.ashx?id=',
+                    platform = item.sat_name,
+                    minx = Math.min(item.x1, Math.min(item.x2, Math.min(item.x3, item.x4))),
+                    maxx = Math.max(item.x1, Math.max(item.x2, Math.max(item.x3, item.x4))),
+                    miny = Math.min(item.y1, Math.min(item.y2, Math.min(item.y3, item.y4))),
+                    maxy = Math.max(item.y1, Math.max(item.y2, Math.max(item.y3, item.y4))),
+                    anchors = [
+                        [maxy, minx],
+                        [maxy, maxx],
+                        [miny, maxx],
+                        [miny, minx]
+                    ], // TopLeft, TopRight, BottomRight, BottomLeft on image
+                    coords = item.geometry.coordinates[0],
+                    clip = transformCoordinates(coords);  // clip polygon
+
+                if (platform == "WV01" || platform == "WV02" || platform == "QB02" || (platform == "GE01" && item.id.length == 16)) {
+                    minx = Math.min(item.x1, item.x2, item.x3, item.x4);
+                    maxx = Math.max(item.x1, item.x2, item.x3, item.x4);
+                    miny = Math.min(item.y1, item.y2, item.y3, item.y4);
+                    maxy = Math.max(item.y1, item.y2, item.y3, item.y4);
+                    var sw = Math.max((maxx - minx), (maxy - miny))/2;
+                    var cx = (maxx + minx)/2;
+                    var cy = (maxy + miny)/2;
+                    minx = cx - sw;
+                    maxy = cy + sw;
+                    maxx = cx + sw;
+                    miny = cy - sw;
+                    anchors = [
+                        [maxy, minx],
+                        [maxy, maxx],
+                        [miny, maxx],
+                        [miny, minx]
+                    ];
+                } else if (platform == "EROS-B" || platform == "SPOT 5" || platform == "SPOT 6") {
+                    anchors = [
+                        [item.y1, item.x1],
+                        [item.y2, item.x2],
+                        [item.y4, item.x4],
+                        [item.y3, item.x3]
+                    ];
+                } else if (platform == "Pleiades") {
+                    anchors = [
+                        [item.y2, item.x2],
+                        [item.y3, item.x3],
+                        [item.y1, item.x1],
+                        [item.y4, item.x4]
+                    ];
+                }
+                var options = {
+                    opacity: 0.8
+                    ,clip: clip  // clip polygon
+                };
+                var gmxImage = new L.ImageTransform(url + item.id, anchors, options);
+                gmxImage
+                    .on('load', function(ev) {
+                        if (autochkbox.checked) setTimeout(goNext, 100);
+                    })
+                    .on('error', function(ev) {
+                        console.log('Error in quicklook: ', item.id);
+                    });
+
+                map.addLayer(gmxImage);
+                var str = (num + 1) + '&nbsp;from:&nbsp;' + (len - 1);
+                str += '<br>platform: ' + item.sat_name;
+                str += '<br>id: <a href="' + infoPrefix + item.id + '" target="_blank">' + item.id + '</a>';
+                str += '<br>date: ' + item.date;
+                
+                document.getElementById('timeInfo').innerHTML = str;
+                map.fitBounds([
+                    [miny, minx],
+                    [maxy, maxx]
+                ]);
+                return gmxImage;
+            };
+        document.getElementById("prev").onclick = function() {
+            if (currentImage) map.removeLayer(currentImage);
+            currentID--;
+            currentImage = showOneScene(currentID);
+        }
+        
+        document.getElementById("next").onclick = goNext;
+        //currentImage = showOneScene(currentID);
+        
+        L.Control.gmxDrawingObjectsListWidget = L.Control.extend({
+            options: {
+                position: 'topright',
+                id: 'gmxDrawingObjectsListWidget'
+            },
+
+            onAdd: function (map) {
+                if (!map) return;
+                var className = 'leaflet-gmx-drawingObjectsListWidget',
+                    container = L.DomUtil.create('div', className);
+                    
+                    var drawingObjectsListWidget = new nsGmx.DrawingObjectsListWidget(container, {
+                        drawingManager: map.gmxDrawing
+                    });
+                return container;
+            }
+        });
+
+        map.addControl(new L.Control.gmxDrawingObjectsListWidget());
+        map.addControl(new L.Control.gmxDrawing());
+        
+        var find = document.getElementById("find");
+        var startFind = function() {
+            if (currentImage) map.removeLayer(currentImage);
+            var features = map.gmxDrawing.getFeatures();
+            if (features.length > 0) {
+                var feature = features[features.length - 1],
+                    bounds = feature.getBounds(),
+                    nw = feature.getBounds().getNorthWest(),
+                    ne = feature.getBounds().getNorthEast(),
+                    se = feature.getBounds().getSouthEast(),
+                    sw = feature.getBounds().getSouthWest();
+                getData('[{g:"POLYGON (('+nw.lng+' '+nw.lat+', '+ne.lng+' '+ne.lat+', '+se.lng+' '+se.lat+', '+sw.lng+' '+sw.lat+'))"}]');
+            } else {
+                alert('Please draw Rectangle!');
+            }
+        }
+        find.onclick = startFind;
+        map.gmxDrawing
+            .on('removefrommap', function (ev) {
+//console.log('removefrommap', arguments);
+                if (find.length < 1) find.style.display = 'none';
+            })
+            .on('addtomap', function (ev) {
+                find.style.display = 'block';
+            });
+        
+        startFind();
+
+	</script>
+<a href="https://github.com/ScanEx/Leaflet.imageTransform"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
+</body>
+</html>
