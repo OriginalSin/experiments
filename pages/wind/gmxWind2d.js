@@ -1,8 +1,8 @@
 /*
  (c) 2014, Sergey Alekseev salekseev@scanex.ru
- Leaflet.HeatMapWebGL, plugin for Gemixer layers.
+ Leaflet.Wind2d, plugin for Gemixer layers.
 */
-L.HeatMapWebGL = L.Class.extend({
+Leaflet.Wind2d = L.Class.extend({
 
     options: {
         pane: 'markerPane',
@@ -125,14 +125,14 @@ L.HeatMapWebGL = L.Class.extend({
         if (this.data) {
             this._updateBbox();
             var dataLen = this.data.length,
-                valScale = this._map._zoom * 2,
+                valScale = this._map._zoom * 1,
                 options = this.options,
                 ctxShift = this._ctxShift,
                 mInPixel = this.mInPixel;
             
             for (var i = 0; i < dataLen; i++) {
                 var it = this.data[i].properties,
-                    val = options.size || it[3] * valScale || 1,
+                    val = options.size || it[5] * valScale || 1,
                     geo = it[it.length - 1],
                     coord = geo.coordinates;
 
@@ -150,6 +150,6 @@ L.HeatMapWebGL = L.Class.extend({
     }
 });
 
-L.heatMapWebGL = function (map, options) {
-    return new L.HeatMapWebGL(map, options);
+L.wind2d = function (map, options) {
+    return new Leaflet.Wind2d(map, options);
 };

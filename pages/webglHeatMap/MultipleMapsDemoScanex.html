@@ -178,7 +178,8 @@
                     //инициализируем контролы ГеоМиксера
                     map.addControl(L.control.gmxBottom())
                         .addControl(L.control.gmxLocation())
-                        .addControl(L.control.gmxCopyright({type: 'window'}))
+                        .addControl(L.control.gmxCopyright())
+                        .addControl(L.control.gmxLogo())
                         .addControl(L.control.gmxLayers(blm));
 
                     //добавляем подложки из карты ГеоМиксера

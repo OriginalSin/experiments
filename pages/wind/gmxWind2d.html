@@ -39,10 +39,10 @@
     
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
     <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
-
+/*
 	<script type="text/javascript" src="externals/webgl-heatmap.js"></script>
 	<script type="text/javascript" src="gmxHeatMapWebGL.js"></script>
-    
+*/    
 	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 </head>
@@ -62,8 +62,8 @@
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
         }).addTo(map);
 
-        var heatmap = new L.HeatMapWebGL(map, {alphaRange: 0.2}); 
-        map.addLayer(heatmap);
+        var wind = new L.gmxWind2d(map, {alphaRange: 0.2}); 
+        map.addLayer(wind);
 
         var updateInfo = function(currentDate) {
             var zz = function(x) { return x < 10 ? "0" + x : x}
@@ -82,12 +82,14 @@
         L.gmx.loadLayer('NDFYK', '3E88643A8AC94AFAB4FD44941220B1CE', {
             beginDate: new Date(ddt2.valueOf() - oneDay),
             endDate: ddt2
-        }).then(function(hotspotLayer) {
-            var observer = hotspotLayer.addObserver({
+        }).then(function(windLayer) {
+            var observer = windLayer.addObserver({
                 callback: function(data) {
+                /*
                     heatmap.setData(data.added);
                     heatmap.redraw();
                     chkAuto();
+                    */
                 }
                 ,type: 'resend'
               });
