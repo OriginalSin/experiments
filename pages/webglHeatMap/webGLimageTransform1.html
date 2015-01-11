@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Leaflet Image Transform Interactive Example</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+    <link rel="stylesheet" href="css/examples.css" />
+    
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+
+	
+    
+</head>
+<body>
+	<div id="map"></div>
+    
+    <div class="outer-info">
+        <span class="leaflet-bar info">Drag markers to transform; edit red polygon to clip</span>
+    </div>
+
+	<script>
+		var osmUrl = 'http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+			osm = new L.TileLayer(osmUrl, {maxZoom: 18}),
+			map = new L.Map('map', {layers: [osm], center: new L.LatLng(56, 137.23), zoom: 2});
+
+        var anchors = [[56.344192, 136.59558], [56.344192, 137.8782], [55.613245, 137.8782], [55.613245, 136.59558]];
+        var clipCoords = [[56.301281, 136.90579],[56.150009, 137.83902],[55.639533, 137.53169],[55.788635, 136.60979]];
+/*
+    <script src="webGLimageTransform.js"></script>
+        var image = L.imageTransform('img/image.jpg', anchors, { opacity: 0.5, clip: clipCoords }).addTo(map);
+        var image = new Image();
+        image.onload = function(ev) {
+            //var canvas = L.webGLimageTransform(image);
+            var myIcon = L.divIcon({className: 'my-div-icon'});
+            // you can set .my-div-icon styles in CSS
+
+            L.marker([56.344192, 136.59558], {icon: myIcon}).addTo(map);
+        }
+        image.src = 'image.jpg';
+
+        
+        var externalPolygon = L.polygon(anchors, {fill: false}).addTo(map);
+        
+        var clipPolygon = L.polygon(clipCoords, {fill: false, color: 'red'}).addTo(map);
+
+        clipPolygon.editing.enable();
+        
+        clipPolygon.on('edit', function() {
+            image.setClip(clipPolygon.getLatLngs());
+        })
+
+        var updateAnchors = function() {
+            
+            var anchors = anchorMarkers.map(function(marker){ return marker.getLatLng(); })
+            image.setAnchors(anchors);
+            externalPolygon.setLatLngs(anchors);
+            clipPolygon.setLatLngs(image.getClip());
+            
+            //TODO: support setLatLngs() Leaflet.Draw
+            //HACK: update editing points
+            clipPolygon.editing.disable();
+            clipPolygon.editing.enable();
+        }
+        
+        var anchorMarkers = anchors.map(function(anchor) {
+            return L.marker(anchor, {draggable: true}).addTo(map).on('drag', updateAnchors);
+        })
+*/
+	</script>
+</body>
+</html>

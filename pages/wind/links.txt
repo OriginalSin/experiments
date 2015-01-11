@@ -1,0 +1,5 @@
+http://www.ibiblio.org/e-notes/webgl/gpu/contents.htm
+http://metanit.com/web/webgl/2.5.php
+http://jsfiddle.net/greggman/7dQu9/
+https://www.shadertoy.com/browse
+http://jcgt.org/published/0003/04/01/paper.pdf

@@ -1,0 +1,151 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	
+	<link rel="stylesheet" type="text/css" href="http://maps.kosmosnimki.ru/api/css/jquery-ui-1.10.4.css"> 
+	<link rel="stylesheet" type="text/css" href="http://maps.kosmosnimki.ru/api/common.css">
+	<link rel="stylesheet" type="text/css" href="http://maps.kosmosnimki.ru/api/treeview.css">
+	<link rel="stylesheet" type="text/css" href="http://maps.kosmosnimki.ru/api/buttons.css">
+	<link rel="stylesheet" type="text/css" href="http://maps.kosmosnimki.ru/api/search.css">
+	<!--link rel="stylesheet" type="text/css" href="../api/menu.css"-->
+	
+	<script src="http://maps.kosmosnimki.ru/api/jquery/jquery-1.10.2.min.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/jquery/jquery-ui-1.10.4.min.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/jquery/jquery.treeview.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/jquery/mustache.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/apil.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD" charset="windows-1251"></script> <!-- api-ключ для доступа к сервису API, полученный на account.kosmosnimki.ru для сайта kosmosnimki.ru, на котором размещена данная веб-страница --><!-- ВНИМАНИЕ! ДЛЯ ТЕСТИРОВАНИЯ С ЛОКАЛЬНОГО ДИСКА ИСПОЛЬЗУЙТЕ LOCALHOST -->
+	
+	<script src="http://maps.kosmosnimki.ru/api/gmxCore.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/translations.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/lang_ru.js"></script>
+	
+	<script src="http://maps.kosmosnimki.ru/api/utilities.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/menu.js"></script>
+	<script src="http://maps.kosmosnimki.ru/api/plugins/Add2MapPlugin.js"></script>
+	
+	
+
+	<title></title>
+
+
+</head>
+
+<body>
+<div id="searchInput" style="margin:5px"></div>
+<div id="searchInputGC" style="margin:5px"></div>
+<div id="searchInputSP" style="margin:5px"></div>
+<table><tbody><tr>
+    <td width="360" valign="top" style="padding:5px">
+    <div style="margin-bottom:10px;">
+<!--
+    <input type=radio id="notosm" name="datasource" onclick="gmxGeoCodeUseOSM=false; UseGC(false)">rumap&nbsp;&nbsp;
+-->
+    <input type=radio id="osm" name="datasource" onclick="gmxGeoCodeUseOSM=true; UseGC(false)" checked>osm&nbsp;&nbsp;
+<!--
+    <input type=radio id="gc" name="datasource" onclick="UseGC(true)">геоцентр&nbsp;&nbsp;
+    <input type=radio id="sputnic" name="datasource" onclick="UseSputnic(true)">спутник
+-->
+    </div>
+    <div id="leftContent" style="overflow:hidden" class="leftContent"></div>
+    </td>
+	<td>
+		<div id="map_e" style="width: 1024px; height: 800px;"></div> <!--задаем контейнер, в который загружается карта -->
+	</td>
+	<td valign="top">
+		<div id="some"></div>
+	</td>
+</tr></tbody></table>
+
+<script>
+    var host = "http://geocode.kosmosnimki.ru/";
+    var gmxGeoCodeShpDownload = true;
+    var gmxGeoCodeUseOSM = true; // использовать OSM
+    var gmxGeoCodeShowNearest = true; // показывать ближайший к курсору объект
+    var gmxGeoCodeShpDownload = false;
+
+ createFlashMap(document.getElementById("map_e"), 'maps.kosmosnimki.ru', "F677A7231BBC467D8CE6A578D6619F4B", function (map) {
+
+    gmxCore.loadModule("search", "http://geocode.kosmosnimki.ru/search.js"); // 
+    gmxCore.addModulesCallback(["search"], function () {
+        var oSearchModule = gmxCore.getModule("search");
+        window.oMenu = new leftMenu();
+        window.oSearchControl = new oSearchModule.SearchGeomixer();
+        window.oSearchControl.Init({
+            Menu: window.oMenu,
+            ContainerInput: document.getElementById("searchInput"), //document.getElementById('searchCanvas'),
+            ContainerList: null,
+            ServerBase: host, 
+            ImagesHost: "http://maps.kosmosnimki.ru/api/img",
+            layersSearchFlag: false,
+            mapHelper: null,
+            Map: map
+        });
+		
+		map.minimizeTools ();
+/*
+        window.oSearchControlGC = new oSearchModule.SearchGeomixer();
+        window.oSearchControlGC.Init({
+            Menu: window.oMenu,
+            ContainerInput: document.getElementById("searchInputGC"), //document.getElementById('searchCanvas'),
+            ContainerList: null,
+            ServerBase: host+"GC", 
+            ImagesHost: "http://maps.kosmosnimki.ru/api/img",
+            layersSearchFlag: false,
+            mapHelper: null,
+            Map: map
+        })
+
+        window.oSearchControlSP = new oSearchModule.SearchGeomixer();
+        window.oSearchControlSP.Init({
+            Menu: window.oMenu,
+            ContainerInput: document.getElementById("searchInputSP"), //document.getElementById('searchCanvas'),
+            ContainerList: null,
+            ServerBase: host+"SP", 
+            ImagesHost: "http://maps.kosmosnimki.ru/api/img",
+            layersSearchFlag: false,
+            mapHelper: null,
+            Map: map
+        })             
+        ;
+        $('#searchInputGC').hide();
+        $('#searchInputSP').hide();
+        $('#notosm').click()
+*/
+    })
+
+})
+
+function UseGC(b) {
+    if (b) {
+        $('#left_search').remove();
+//        $('#searchInputGC').show();
+        $('#searchInput').hide();
+//        $('#searchInputSP').hide();
+    }
+    else {
+        $('#left_search').remove();
+//        $('#searchInputGC').hide();
+//        $('#searchInputSP').hide();
+        $('#searchInput').show(); 
+    }
+}
+/*
+function UseSputnic(b) {
+    if (b) {
+        $('#left_search').remove();
+        $('#searchInputSP').show();
+        $('#searchInputGC').hide();
+        $('#searchInput').hide();
+    }
+    else {
+        $('#left_search').remove();
+        $('#searchInputSP').hide();
+        $('#searchInputGC').hide();
+        $('#searchInput').show();
+    }
+}
+*/
+</script>
+
+</body>
+</html>
