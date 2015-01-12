@@ -1,23 +1,26 @@
 /*
- (c) 2014, Sergey Alekseev salekseev@scanex.ru
- Leaflet.HeatMapWebGL, plugin for Gemixer layers.
+ (c) 2015, Sergey Alekseev salekseev@scanex.ru
+ Leaflet.Overlay , plugin for overlay layer.
 */
-L.HeatMapWebGL = L.Class.extend({
+L.Overlay = L.Class.extend({
 
     options: {
         pane: 'markerPane',
-        //size: 25,
-        opacity: 0.1,
-        gradientTexture: false,
-        alphaRange: 0.1
+        drawFunc: null
+    },
+
+    setDrawFunc: function (drawFunc) {
+        this.options.drawFunc = drawFunc;
+        return this;
     },
 
     setData: function (data) {
-        this.data = data;
+        this._data = data;
+        return this;
     },
 
     initialize: function (map, options) {
-        this.data = [];
+        this._frame = false;
         L.setOptions(this, options);
     },
 
@@ -41,7 +44,15 @@ L.HeatMapWebGL = L.Class.extend({
             map.on('zoomanim', this._animateZoom, this);
         }
 
-        this._redraw();
+        this.redraw();
+    },
+
+    addTo: function (map) {
+        // if (!this._canvas.parentNode) {
+            // map.getPanes()[this.options.pane].appendChild(this._canvas);
+        // }
+        map.addLayer(this);
+        return this;
     },
 
     onRemove: function (map) {
@@ -52,14 +63,6 @@ L.HeatMapWebGL = L.Class.extend({
         if (map.options.zoomAnimation) {
             map.off('zoomanim', this._animateZoom, this);
         }
-    },
-
-    addTo: function (map) {
-        if (!this._canvas.parentNode) {
-            map.getPanes()[this.options.pane].appendChild(this._canvas);
-        }
-        map.addLayer(this);
-        return this;
     },
 
     _animateZoom: function (e) {
@@ -73,21 +76,16 @@ L.HeatMapWebGL = L.Class.extend({
     },
 
     _initCanvas: function () {
-        var canvas = L.DomUtil.create('canvas', 'leaflet-heatmap-layer leaflet-layer'),
+        var className = this.options.className || 'leaflet-overlay-layer',
+            canvas = L.DomUtil.create('canvas', 'leaflet-layer ' + className),
             size = this._map.getSize();
+
         canvas.width  = size.x; canvas.height = size.y;
         canvas.style.pointerEvents = 'none';
         this._canvas = canvas;
 
         var animated = this._map.options.zoomAnimation && L.Browser.any3d;
         L.DomUtil.addClass(canvas, 'leaflet-zoom-' + (animated ? 'animated' : 'hide'));
-
-        var options = this.options;
-        this.WebGLHeatMap = createWebGLHeatmap({ 
-            canvas: canvas, 
-            gradientTexture: options.gradientTexture, 
-            alphaRange: [0, options.alphaRange]
-        });
     },
 
     _updateBbox: function (zoom) {
@@ -118,38 +116,18 @@ L.HeatMapWebGL = L.Class.extend({
 
         L.DomUtil.setPosition(_canvas, topLeft);
         _canvas.width = size.x; _canvas.height = size.y;
-        this.WebGLHeatMap.adjustSize();
-
-        var heatmap = this.WebGLHeatMap;
-        heatmap.clear();
-        if (this.data) {
+        this._frame = false;
+        if (this._data && this.options.drawFunc) {
             this._updateBbox();
-            var dataLen = this.data.length,
-                valScale = this._map._zoom * 5,
-                options = this.options,
-                ctxShift = this._ctxShift,
-                mInPixel = this.mInPixel;
-            
-            for (var i = 0; i < dataLen; i++) {
-                var it = this.data[i].properties,
-                    val = options.size || it[5] * valScale / 15 || 1,
-                    geo = it[it.length - 1],
-                    coord = geo.coordinates;
-
-                heatmap.addPoint(
-                    Math.floor(coord[0] * mInPixel + ctxShift[0]),
-                    Math.floor(ctxShift[1] - coord[1] * mInPixel),
-                    val,
-                    options.opacity
-                );
-            }
-            heatmap.update();
-            heatmap.display();
+            this.options.drawFunc(_canvas, {
+                items: this._data,
+                shiftPoint: this._ctxShift,
+                scale: this.mInPixel
+            });
         }
-        this._frame = null;
     }
 });
 
-L.heatMapWebGL = function (map, options) {
-    return new L.HeatMapWebGL(map, options);
+L.overlay = function (map, options) {
+    return new L.Overlay(map, options);
 };

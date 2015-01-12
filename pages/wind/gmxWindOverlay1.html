@@ -1,0 +1,602 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<title>GeoMixer Vector Layer Animation</title>
+	<meta charset="utf-8" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0px;
+        }
+		
+        #controls {
+            position: absolute;
+			left: 54px;
+			top: 11px;
+			z-index: 1;
+			background-color: #ffffff;
+			padding: 13px 15px 13px 13px;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+        }
+		
+		#slider {
+			width: 300px;
+		}
+		#timeInfo {
+			text-align: center;
+			padding-top: 12px;
+		}
+		#auto {
+            display: none;
+		}
+        
+    </style>
+<script id="arrows-fs1" type="x-shader/x-fragment">
+    // 2D vector field visualization by Morgan McGuire, @morgan3d, http://casual-effects.com
+    precision mediump float;
+    uniform float iGlobalTime;
+    varying vec4 v_color;
+
+    const float PI = 3.1415927;
+
+    const int   ARROW_V_STYLE = 1;
+    const int   ARROW_LINE_STYLE = 2;
+
+    // Choose your arrow head style
+    const int   ARROW_STYLE = ARROW_LINE_STYLE;
+    const float ARROW_TILE_SIZE = 64.0;
+
+    // How sharp should the arrow head be? Used
+    const float ARROW_HEAD_ANGLE = 45.0 * PI / 180.0;
+
+    // Used for ARROW_LINE_STYLE
+    const float ARROW_HEAD_LENGTH = ARROW_TILE_SIZE / 6.0;
+    const float ARROW_SHAFT_THICKNESS = 3.0;
+        
+
+
+    // Computes the center pixel of the tile containing pixel pos
+    vec2 arrowTileCenterCoord(vec2 pos) {
+        return (floor(pos / ARROW_TILE_SIZE) + 0.5) * ARROW_TILE_SIZE;
+    }
+
+
+    // v = field sampled at tileCenterCoord(p), scaled by the length
+    // desired in pixels for arrows
+    // Returns 1.0 where there is an arrow pixel.
+    float arrow(vec2 p, vec2 v) {
+        // Make everything relative to the center, which may be fractional
+        p -= arrowTileCenterCoord(p);
+            
+        float mag_v = length(v), mag_p = length(p);
+        
+        if (mag_v > 0.0) {
+            // Non-zero velocity case
+            vec2 dir_p = p / mag_p, dir_v = v / mag_v;
+            
+            // We can't draw arrows larger than the tile radius, so clamp magnitude.
+            // Enforce a minimum length to help see direction
+            mag_v = clamp(mag_v, 5.0, ARROW_TILE_SIZE / 2.0);
+
+            // Arrow tip location
+            v = dir_v * mag_v;
+            
+            // Define a 2D implicit surface so that the arrow is antialiased.
+            // In each line, the left expression defines a shape and the right controls
+            // how quickly it fades in or out.
+
+            float dist;		
+            if (ARROW_STYLE == ARROW_LINE_STYLE) {
+                // Signed distance from a line segment based on https://www.shadertoy.com/view/ls2GWG by 
+                // Matthias Reitinger, @mreitinger
+                
+                // Line arrow style
+                dist = 
+                    max(
+                        // Shaft
+                        ARROW_SHAFT_THICKNESS / 4.0 - 
+                            max(abs(dot(p, vec2(dir_v.y, -dir_v.x))), // Width
+                                abs(dot(p, dir_v)) - mag_v + ARROW_HEAD_LENGTH / 2.0), // Length
+                            
+                         // Arrow head
+                         min(0.0, dot(v - p, dir_v) - cos(ARROW_HEAD_ANGLE / 2.0) * length(v - p)) * 2.0 + // Front sides
+                         min(0.0, dot(p, dir_v) + ARROW_HEAD_LENGTH - mag_v)); // Back
+            } else {
+                // V arrow style
+                dist = min(0.0, mag_v - mag_p) * 2.0 + // length
+                       min(0.0, dot(normalize(v - p), dir_v) - cos(ARROW_HEAD_ANGLE / 2.0)) * 2.0 * length(v - p) + // head sides
+                       min(0.0, dot(p, dir_v) + 1.0) + // head back
+                       min(0.0, cos(ARROW_HEAD_ANGLE / 2.0) - dot(normalize(v * 0.33 - p), dir_v)) * mag_v * 0.8; // cutout
+            }
+            
+            return clamp(1.0 + dist, 0.0, 1.0);
+        } else {
+            // Center of the pixel is always on the arrow
+            return max(0.0, 1.2 - mag_p);
+        }
+    }
+
+    /////////////////////////////////////////////////////////////////////
+
+    // The vector field; use your own function or texture
+    vec2 field(vec2 pos) {
+        return vec2(cos(v_color[0]), 1.0 * sin(v_color[0])) * 1.0;
+    //    return vec2(cos(pos.x * 0.01 + pos.y * 0.01) + cos(pos.y * 0.005 + iGlobalTime), 2.0 * cos(pos.y * 0.01  + iGlobalTime * 0.3)) * 0.5;
+
+        // Examples:
+    //	return 2.0 * texture2D(iChannel1, mod(pos, 2.0 * iChannelResolution[1].xy) * 0.5 / iChannelResolution[1].xy).xy - 1.0;
+    //	return 2.0 * texture2D(iChannel0, (pos + vec2(iGlobalTime * 100.0, 0.0)) / iChannelResolution[0].xy).xy - 1.0;
+    //	return vec2(0.0, 0.0);
+    //	return vec2(cos(pos.x * 0.017 + cos(pos.y * 0.004 + iGlobalTime * 0.1) * 6.28 * 4.0) * 3.0, cos(6.28 * cos(pos.y * 0.01 + pos.x * 0.007)));
+    }
+
+
+    void main(void) {
+        gl_FragColor = 
+            (1.0 - arrow(gl_FragCoord.xy, field(arrowTileCenterCoord(gl_FragCoord.xy)) * ARROW_TILE_SIZE * 0.4)) * 
+            vec4(field(gl_FragCoord.xy) * 0.5 + 0.5, 0.5, 1.0);
+    }
+</script>
+
+<script id="arrows-fs1" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform float iGlobalTime;
+    varying vec4 v_color;
+
+//Computes the signed distance from a line
+float line_distance(vec2 p, vec2 p1, vec2 p2) {
+    vec2 center = (p1 + p2) * 0.5;
+    float len = length(p2 - p1);
+    vec2 dir = (p2 - p1) / len;
+    vec2 rel_p = p - center;
+    return dot(rel_p, vec2(dir.y, -dir.x));
+}
+
+//Computes the signed distance from a line segment
+float segment_distance(vec2 p, vec2 p1, vec2 p2) {
+    vec2 center = (p1 + p2) * 0.5;
+    float len = length(p2 - p1);
+    vec2 dir = (p2 - p1) / len;
+    vec2 rel_p = p - center;
+    float dist1 = abs(dot(rel_p, vec2(dir.y, -dir.x)));
+    float dist2 = abs(dot(rel_p, dir)) - 0.5 * len;
+    return max(dist1, dist2);
+}
+//Computes the centers of a circle with
+//given radius passing through p1 & p2
+vec4 inscribed_circle(vec2 p1, vec2 p2, float radius) {
+    float q = length(p2-p1);
+    vec2 m = (p1+p2)/2.0;
+    vec2 d = vec2( sqrt(radius * radius - (q * q/4.0)) * (p1.y-p2.y)/q, sqrt(radius * radius - (q * q/4.0)) * (p2.x-p1.x)/q);
+    return vec4(m+d, m-d);
+}
+
+float arrow_stealth(vec2 texcoord, float body, float head, float linewidth, float antialias) {
+    float w = linewidth/2.0 + antialias;
+    vec2 start = -vec2(body/2.0, 0.0);
+    vec2 end = +vec2(body/2.0, 0.0);
+    float height = 0.5;
+    // Head : 4 lines
+    float d1 = line_distance(texcoord, end-head * vec2(+1.0,-height), end);
+    float d2 = line_distance(texcoord, end-head * vec2(+1.0,-height), end-vec2(3.0 * head/4.0,0.0));
+    float d3 = line_distance(texcoord, end-head * vec2(+1.0,+height), end);
+    float d4 = line_distance(texcoord, end-head * vec2(+1.0,+0.5), end-vec2(3.0 * head/4.0,0.0));
+    //Body : 1 segment
+    float d5 = segment_distance(texcoord, start, end - vec2(linewidth,0.0));
+    return min(d5, max( max(-d1, d3), - max(-d2,d4)));
+}
+// 2D vector field visualization by Matthias Reitinger, @mreitinger
+// Based on "2D vector field visualization by Morgan McGuire, http://casual-effects.com", https://www.shadertoy.com/view/4s23DG
+
+const float ARROW_TILE_SIZE = 32.0;
+
+// Computes the center pixel of the tile containing pixel pos
+vec2 arrowTileCenterCoord(vec2 pos) {
+	return (floor(pos / ARROW_TILE_SIZE) + 0.5) * ARROW_TILE_SIZE;
+}
+
+// Computes the signed distance from a line segment
+float line(vec2 p, vec2 p1, vec2 p2) {
+	vec2 center = (p1 + p2) * 0.5;
+	float len = length(p2 - p1);
+	vec2 dir = (p2 - p1) / len;
+	vec2 rel_p = p - center;
+	float dist1 = abs(dot(rel_p, vec2(dir.y, -dir.x)));
+	float dist2 = abs(dot(rel_p, dir)) - 0.5*len;
+	return max(dist1, dist2);
+}
+
+// v = field sampled at arrowTileCenterCoord(p), scaled by the length
+// desired in pixels for arrows
+// Returns a signed distance from the arrow
+float arrow(vec2 p, vec2 v) {
+	// Make everything relative to the center, which may be fractional
+	p -= arrowTileCenterCoord(p);
+		
+	float mag_v = length(v), mag_p = length(p);
+	
+	if (mag_v > 0.0) {
+		// Non-zero velocity case
+		vec2 dir_v = v / mag_v;
+		
+		// We can't draw arrows larger than the tile radius, so clamp magnitude.
+		// Enforce a minimum length to help see direction
+		mag_v = clamp(mag_v, 5.0, ARROW_TILE_SIZE * 0.5);
+
+		// Arrow tip location
+		v = dir_v * mag_v;
+
+		// Signed distance from shaft
+		float shaft = line(p, v, -v);
+		// Signed distance from head
+		float head = min(line(p, v, 0.4*v + 0.2*vec2(-v.y, v.x)),
+		                 line(p, v, 0.4*v + 0.2*vec2(v.y, -v.x)));
+
+		return min(shaft, head);
+	} else {
+		// Signed distance from the center point
+		return mag_p;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////
+
+// The vector field; use your own function or texture
+vec2 field(vec2 pos) {
+    return vec2(cos(v_color[0]), 1.0 * sin(v_color[0])) * 1.0;
+//	return 2.0 * texture2D(iChannel1, mod(pos, 2.0 * iChannelResolution[1].xy) * 0.5 / iChannelResolution[1].xy).xy - 1.0;
+//	return 2.0 * texture2D(iChannel0, (pos + vec2(iGlobalTime * 100.0, 0.0)) / iChannelResolution[0].xy).xy - 1.0;
+	//return vec2(0.0, 0.0);
+//	return vec2(cos(pos.x * 0.01 + pos.y * 0.01) + cos(pos.y * 0.005 + iGlobalTime), 2.0 * cos(pos.y * 0.01  + iGlobalTime * 0.3)) * 0.5;
+//	return vec2(cos(pos.x * 0.017 + cos(pos.y * 0.004 + iGlobalTime * 0.1) * 6.28 * 4.0) * 3.0, cos(6.28 * cos(pos.y * 0.01 + pos.x * 0.007)));
+}
+
+
+void main(void) {
+	float arrow_dist = arrow(gl_FragCoord.xy,
+	                         field(arrowTileCenterCoord(gl_FragCoord.xy)) * ARROW_TILE_SIZE * 0.4);
+	vec4 arrow_col = vec4(0, 0, 0, clamp(arrow_dist, 0.0, 1.0));
+	//vec4 field_col = vec4(0, 0, 0, 0.0);
+	vec4 field_col = vec4(field(gl_FragCoord.xy) * 0.5 + 0.5, 0.5, 1.0);
+	
+	gl_FragColor = mix(arrow_col, field_col, arrow_col.a);
+	//gl_FragColor = vec4(gl_FragCoord.xy * 0.5 + 0.5, 0.5, 1.0);
+}
+</script>
+<script id="arrows-fs" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform float iGlobalTime;
+    varying vec4 v_color;
+    
+    const float PI = 3.14159265358979323846264;
+    const float M_SQRT_2 = 1.4142135623730951;
+    uniform float size, linewidth, antialias;
+    uniform vec4 fg_color, bg_color;
+    varying vec2 rotation;
+    varying vec2 v_size;
+/*
+*/
+//Computes the signed distance from a line
+float line_distance(vec2 p, vec2 p1, vec2 p2) {
+    vec2 center = (p1 + p2) * 0.5;
+    float len = length(p2 - p1);
+    vec2 dir = (p2 - p1) / len;
+    vec2 rel_p = p - center;
+    return dot(rel_p, vec2(dir.y, -dir.x));
+}
+
+//Computes the signed distance from a line segment
+float segment_distance(vec2 p, vec2 p1, vec2 p2) {
+    vec2 center = (p1 + p2) * 0.5;
+    float len = length(p2 - p1);
+    vec2 dir = (p2 - p1) / len;
+    vec2 rel_p = p - center;
+    float dist1 = abs(dot(rel_p, vec2(dir.y, -dir.x)));
+    float dist2 = abs(dot(rel_p, dir)) - 0.5 * len;
+    return max(dist1, dist2);
+}
+//Computes the centers of a circle with
+//given radius passing through p1 & p2
+vec4 inscribed_circle(vec2 p1, vec2 p2, float radius) {
+    float q = length(p2-p1);
+    vec2 m = (p1+p2)/2.0;
+    vec2 d = vec2( sqrt(radius * radius - (q * q/4.0)) * (p1.y-p2.y)/q, sqrt(radius * radius - (q * q/4.0)) * (p2.x-p1.x)/q);
+    return vec4(m+d, m-d);
+}
+
+float arrow_stealth(vec2 texcoord, float body, float head, float linewidth, float antialias) {
+    float w = linewidth/2.0 + antialias;
+    vec2 start = -vec2(body/2.0, 0.0);
+    vec2 end = +vec2(body/2.0, 0.0);
+    float height = 0.5;
+    // Head : 4 lines
+    float d1 = line_distance(texcoord, end-head * vec2(+1.0,-height), end);
+    float d2 = line_distance(texcoord, end-head * vec2(+1.0,-height), end-vec2(3.0 * head/4.0,0.0));
+    float d3 = line_distance(texcoord, end-head * vec2(+1.0,+height), end);
+    float d4 = line_distance(texcoord, end-head * vec2(+1.0,+0.5), end-vec2(3.0 * head/4.0,0.0));
+    //Body : 1 segment
+    float d5 = segment_distance(texcoord, start, end - vec2(linewidth,0.0));
+    return min(d5, max( max(-d1, d3), - max(-d2,d4)));
+}
+
+float arrow_triangle(vec2 texcoord, float body, float head, float height, float linewidth, float antialias) {
+    float w = linewidth/2.0 + antialias;
+    vec2 start = -vec2(body/2.0, 0.0);
+    vec2 end = +vec2(body/2.0, 0.0);
+    // Head : 3 lines
+    float d1 = line_distance(texcoord, end, end - head * vec2(+1.0,-height));
+    float d2 = line_distance(texcoord, end - head * vec2(+1.0,+height), end);
+    float d3 = texcoord.x - end.x + head;
+    // Body : 1 segment
+    float d4 = segment_distance(texcoord, start, end - vec2(linewidth,0.0));
+    float d = min(max(max(d1, d2), -d3), d4);
+    return d;
+}
+
+
+float triangle(vec2 P, float size) {
+    float x = abs(M_SQRT_2 * (P.x - P.y) /2.0);
+    float y = abs(M_SQRT_2 * (P.x + P.y) /2.0);
+    float r1 = max(x, y) - size / (2.0 * M_SQRT_2);
+    float r2 = P.y;
+    return max(r1, r2);
+}
+
+    void main() {
+        vec2 P = gl_PointCoord.xy - vec2(0.5, 0.5);
+        P = vec2(rotation.x * P.x - rotation.y * P.y, rotation.y * P.x + rotation.x * P.y);
+        float distance = triangle(P * v_size, size);
+        if (distance > 0.0) distance = 1.0;
+        else distance = 0.0;
+        //distance = 1.0;
+
+    //    gl_FragColor = arrow_stealth(distance, linewidth, antialias, fg_color, bg_color);
+        gl_FragColor = vec4(gl_PointCoord.xy * 0.5 + 0.5, 0.5, distance);
+    }
+</script>
+
+<script id="arrows-vs" type="x-shader/x-vertex">
+    const float M_SQRT_2 = 1.4142135623730951;
+    uniform mat4 ortho;
+    uniform float size, orientation, linewidth, antialias;
+    attribute vec3 position;
+    varying vec2 rotation;
+    varying vec2 v_size;
+    
+    uniform mat4 u_matrix;
+    attribute vec4 a_vertex;
+    attribute vec4 a_color;
+    varying vec4 v_color;
+
+    void main () {
+/*
+        rotation = vec2(cos(orientation), sin(orientation));
+        gl_Position = ortho * vec4(position, 1.0);
+        v_size = M_SQRT_2 * size + 2.0 * (linewidth + 1.5 * antialias);
+        gl_PointSize = v_size;
+*/
+        gl_PointSize = 32.0;         // Set the size of the point
+        gl_Position = u_matrix * a_vertex;   // multiply each vertex by a matrix.
+        //v_color = a_color;
+    }
+</script>
+<script id="arrows-vs1" type="x-shader/x-vertex">
+    uniform mat4 u_matrix;
+    attribute vec4 a_vertex;
+    attribute vec4 a_color;
+    varying vec4 v_color;
+
+    void main() {
+        gl_PointSize = 32.0;         // Set the size of the point
+        gl_Position = u_matrix * a_vertex;   // multiply each vertex by a matrix.
+        v_color = a_color;
+    }
+</script>
+
+<script id="arrows-fs2" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform float iGlobalTime;
+    varying vec4 v_color;
+
+// 2D vector field visualization by Matthias Reitinger, @mreitinger
+// Based on "2D vector field visualization by Morgan McGuire, http://casual-effects.com", https://www.shadertoy.com/view/4s23DG
+
+const float ARROW_TILE_SIZE = 32.0;
+
+// Computes the center pixel of the tile containing pixel pos
+vec2 arrowTileCenterCoord(vec2 pos) {
+	return (floor(pos / ARROW_TILE_SIZE) + 0.5) * ARROW_TILE_SIZE;
+}
+
+// Computes the signed distance from a line segment
+float line(vec2 p, vec2 p1, vec2 p2) {
+	vec2 center = (p1 + p2) * 0.5;
+	float len = length(p2 - p1);
+	vec2 dir = (p2 - p1) / len;
+	vec2 rel_p = p - center;
+	float dist1 = abs(dot(rel_p, vec2(dir.y, -dir.x)));
+	float dist2 = abs(dot(rel_p, dir)) - 0.5*len;
+	return max(dist1, dist2);
+}
+
+// v = field sampled at arrowTileCenterCoord(p), scaled by the length
+// desired in pixels for arrows
+// Returns a signed distance from the arrow
+float arrow(vec2 p, vec2 v) {
+	// Make everything relative to the center, which may be fractional
+	p -= arrowTileCenterCoord(p);
+		
+	float mag_v = length(v), mag_p = length(p);
+	
+	if (mag_v > 0.0) {
+		// Non-zero velocity case
+		vec2 dir_v = v / mag_v;
+		
+		// We can't draw arrows larger than the tile radius, so clamp magnitude.
+		// Enforce a minimum length to help see direction
+		mag_v = clamp(mag_v, 5.0, ARROW_TILE_SIZE * 0.5);
+
+		// Arrow tip location
+		v = dir_v * mag_v;
+
+		// Signed distance from shaft
+		float shaft = line(p, v, -v);
+		// Signed distance from head
+		float head = min(line(p, v, 0.4*v + 0.2*vec2(-v.y, v.x)),
+		                 line(p, v, 0.4*v + 0.2*vec2(v.y, -v.x)));
+
+		return min(shaft, head);
+	} else {
+		// Signed distance from the center point
+		return mag_p;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////
+
+// The vector field; use your own function or texture
+vec2 field(vec2 pos) {
+    return vec2(cos(v_color[0]), 1.0 * sin(v_color[0])) * 1.0;
+//	return 2.0 * texture2D(iChannel1, mod(pos, 2.0 * iChannelResolution[1].xy) * 0.5 / iChannelResolution[1].xy).xy - 1.0;
+//	return 2.0 * texture2D(iChannel0, (pos + vec2(iGlobalTime * 100.0, 0.0)) / iChannelResolution[0].xy).xy - 1.0;
+	//return vec2(0.0, 0.0);
+//	return vec2(cos(pos.x * 0.01 + pos.y * 0.01) + cos(pos.y * 0.005 + iGlobalTime), 2.0 * cos(pos.y * 0.01  + iGlobalTime * 0.3)) * 0.5;
+//	return vec2(cos(pos.x * 0.017 + cos(pos.y * 0.004 + iGlobalTime * 0.1) * 6.28 * 4.0) * 3.0, cos(6.28 * cos(pos.y * 0.01 + pos.x * 0.007)));
+}
+
+
+void main(void) {
+	float arrow_dist = arrow(gl_FragCoord.xy,
+	                         field(arrowTileCenterCoord(gl_FragCoord.xy)) * ARROW_TILE_SIZE * 0.4);
+	vec4 arrow_col = vec4(0, 0, 0, clamp(arrow_dist, 0.0, 1.0));
+	//vec4 field_col = vec4(0, 0, 0, 0.0);
+	vec4 field_col = vec4(field(gl_FragCoord.xy) * 0.5 + 0.5, 0.5, 1.0);
+	
+	gl_FragColor = mix(arrow_col, field_col, arrow_col.a);
+	//gl_FragColor = vec4(gl_FragCoord.xy * 0.5 + 0.5, 0.5, 1.0);
+}
+</script>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="../externals/leaflet.css" />
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+    
+    <script src="../externals/leaflet-src.js"></script>
+<!--
+	<script type="text/javascript" src="externals/webgl-heatmap.js"></script>
+    <script src="wmap_files/wind-data.js" type="application/javascript"></script>
+    <script src="../externals/gl-matrix-min.js" type="text/javascript"></script>
+-->     
+
+	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+
+	<script type="text/javascript" src="gmxOverlayWebGL.js"></script>
+	<script type="text/javascript" src="gmxOverlay.js"></script>
+    <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
+</head>
+<body>
+	<div id="controls">
+		<div id="slider"></div>
+		<div id="timeInfo"><span id="curDate">Loading data...</span><span id="auto"><input type="checkbox" checked id="autochkbox" /> auto</span></div>
+	</div>
+
+	<div id="map" style="width: 100%; height: 100%"></div>
+	
+	<script>
+        var map = L.map('map').setView([30, 0], 3);
+
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+        }).addTo(map);
+
+//console.log(L.gmxOverlayWebGL);
+L.gmxOverlayWebGL.setOptions({
+    leafletMap: map
+});
+        var wind = new L.Overlay(map, {
+            drawFunc: function(canvas, opt) {
+//console.log(arguments);
+                L.gmxOverlayWebGL.draw(canvas, opt);
+            }
+        }).addTo(map);
+
+        var updateInfo = function(currentDate) {
+            var zz = function(x) { return x < 10 ? "0" + x : x}
+            var dateStr = zz(currentDate.getUTCDate()) + '.' + zz(currentDate.getUTCMonth() + 1) + '.' + zz(currentDate.getUTCFullYear());
+            document.getElementById('curDate').innerHTML = dateStr;
+        }
+        
+        //var startDate = new Date('2014/12/02'),
+        var startDate = new Date(),
+            oneDay = 1000*60*60*24,	// milliseconds in one day
+            now = startDate.getTime(),
+            ddt1 = new Date(now - 30*oneDay), //beginning of the UTC day
+            ddt2 = startDate;
+
+        var autochkbox = document.getElementById('autochkbox');
+        
+        L.gmx.loadLayer('UIRCQ', '7CB878E2BE274837B291E592B2530C39', {
+            beginDate: new Date(ddt2.valueOf() - oneDay),
+            endDate: ddt2
+        }).then(function(windLayer) {
+            var observer = windLayer.addObserver({
+                callback: function(data) {
+                    wind.setData(data.added);
+                    wind.redraw();
+                    //chkAuto();
+                    //observer.deactivate();
+                }
+                ,type: 'resend'
+            });
+            var updateBbox = function() {
+                var screenBounds = map.getBounds(),
+                    p1 = screenBounds.getNorthWest(),
+                    p2 = screenBounds.getSouthEast(),
+                    bbox = gmxAPIutils.bounds([[p1.lng, p1.lat], [p2.lng, p2.lat]]);
+                observer.setBounds(bbox);
+                //observer.activate();
+            };
+            map.on('moveend', updateBbox);
+
+            var nextDay = function(val) {
+                updateInfo(new Date(val - oneDay));
+                //hotspotLayer.setDateInterval(new Date(val - oneDay), new Date(val));
+                observer.setDateInterval(new Date(val - oneDay/2), new Date(val));
+                //observer.activate();
+            }
+            var chkAuto = function() {
+                if (autochkbox.checked) {
+                    var zn = $('#slider').slider("value");
+                    if (zn == ddt2.valueOf()) zn = ddt1.valueOf();
+                    zn += oneDay;
+                    $('#slider').slider("value", zn);
+                    nextDay(zn);
+                }
+            }
+            autochkbox.onchange = chkAuto;
+            
+//            hotspotLayer._gmx.dataManager.preloadTiles(ddt1, ddt2).then(function() {
+                updateInfo(new Date(ddt2.valueOf() - oneDay));
+/*
+*/            
+                document.getElementById('auto').style.display = 'inline';
+                $('#slider').slider({
+                    min: ddt1.valueOf() + oneDay,
+                    max: ddt2.valueOf(),
+                    step: oneDay,
+                    value: ddt1.valueOf(),
+                    slide: function(event, ui) {
+                        nextDay(ui.value);
+                    }
+                });
+                var zn = $('#slider').slider("value");
+                nextDay(zn);
+//            });
+        })
+
+	</script>
+</body>
+</html>
