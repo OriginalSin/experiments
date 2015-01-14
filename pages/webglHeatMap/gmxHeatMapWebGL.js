@@ -9,7 +9,7 @@ L.HeatMapWebGL = L.Class.extend({
         //size: 25,
         opacity: 0.1,
         gradientTexture: false,
-        alphaRange: 0.1
+        alphaRange: 0.2
     },
 
     setData: function (data) {
@@ -125,15 +125,17 @@ L.HeatMapWebGL = L.Class.extend({
         if (this.data) {
             this._updateBbox();
             var dataLen = this.data.length,
-                valScale = this._map._zoom * 5,
+                valScale = this._map._zoom * 2,
                 options = this.options,
                 ctxShift = this._ctxShift,
                 mInPixel = this.mInPixel;
             
             for (var i = 0; i < dataLen; i++) {
                 var it = this.data[i].properties,
-                    val = options.size || it[5] * valScale / 15 || 1,
-                    geo = it[it.length - 1],
+                    zn = it[3];
+				if (zn > 30) zn = 20;
+                var val = options.size || zn * valScale || 1;
+				var geo = it[it.length - 1],
                     coord = geo.coordinates;
 
                 heatmap.addPoint(

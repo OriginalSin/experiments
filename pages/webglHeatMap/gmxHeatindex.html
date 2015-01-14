@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 	<title>GeoMixer Vector Layer Animation</title>
@@ -40,8 +40,7 @@
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
     <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
 
-	<script type="text/javascript" src="externals/webgl-heatmap.js"></script>
-	<script type="text/javascript" src="gmxHeatMapWebGL.js"></script>
+    <script src="http://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
     
 	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
@@ -49,7 +48,7 @@
 <body>
 	<div id="controls">
 		<div id="slider"></div>
-		<div id="timeInfo"><span id="curDate">Loading data...</span><span id="auto"><input type="checkbox" checked id="autochkbox" /> auto</span></div>
+		<div id="timeInfo"><span id="curDate">Loading data...</span><span id="auto"><input type="checkbox" id="autochkbox" /> auto</span></div>
 	</div>
 
 	<div id="map" style="width: 100%; height: 100%"></div>
@@ -61,9 +60,6 @@
             maxZoom: 18,
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
         }).addTo(map);
-
-        var heatmap = new L.HeatMapWebGL(map, {alphaRange: 0.2}); 
-        map.addLayer(heatmap);
 
         var updateInfo = function(currentDate) {
             var zz = function(x) { return x < 10 ? "0" + x : x}
@@ -79,14 +75,28 @@
 
         var autochkbox = document.getElementById('autochkbox');
         
+        var heatmap = null; 
         L.gmx.loadLayer('NDFYK', '3E88643A8AC94AFAB4FD44941220B1CE', {
             beginDate: new Date(ddt2.valueOf() - oneDay),
             endDate: ddt2
         }).then(function(hotspotLayer) {
             var observer = hotspotLayer.addObserver({
                 callback: function(data) {
-                    heatmap.setData(data.added);
-                    heatmap.redraw();
+                    var latlngs = [];
+                    for (var i = 0, len = data.added.length; i < len; i++) {
+                        var it = data.added[i].properties,
+                            geo = it[it.length - 1],
+                            coord = geo.coordinates,
+                            point = L.Projection.Mercator.unproject({x: coord[0], y: coord[1]});
+
+                        latlngs.push([point.lat, point.lng, 50 * it[3]]);
+                    }
+                    if(!heatmap) {
+                        heatmap = L.heatLayer(latlngs);
+                        map.addLayer(heatmap);
+                    } else {
+                        heatmap.setLatLngs(latlngs);
+                    }
                     chkAuto();
                 }
                 ,type: 'resend'
