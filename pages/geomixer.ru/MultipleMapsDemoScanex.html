@@ -29,24 +29,13 @@
         .myName h3 {
             text-align: center;
         }
-        ._076F16BAE008401481F1C3D08B2A13DA input,
-        ._DD5042D37D664149BB9D67FCBDA040E1 input,
-        ._7B35552E4E734E3B866C000DB999D38D input,
-
-        ._9EDFB2CB13254D198E8CB6BC44BC1D3E input,
-        ._153DF37CEA1040058FD75980393668D8 input,
-        ._48DBAEBCBE5948DBB952BC254DC181B5 input
-        {
-            -webkit-appearance: radio; /* Chrome, Safari, Opera */
-            -moz-appearance: radio;    /* Firefox */
-            -ms-appearance: radio;     /* not currently supported */
-        }
     </style>
  
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 
-    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script>
+<!--    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script> -->
+    <script src="../../../buildAPIV2/build/leaflet-geomixer-all-dev.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script>
     <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
 </head>
 <body>
@@ -75,72 +64,69 @@
                 id: 'D4BA4956CC2E4A818F0AC66F156C2713',
                 options: { attributionControl: false, zoomControl: false, scrollWheelZoom: false, zoom: 9, center: new L.LatLng(77.4389, 96.7125) }
                 ,bindPopup: function(gmxMap) {
-                    //var radarsat = gmxMap.layersByID['FF41BC58487847EE80CC516BFB145C6C'];
-                    //if (radarsat && radarsat._map) radarsat._map.gmxLayersControl.addOverlay(radarsat, 'Radarsat-2');
-
                     // подключение балунов
                     var layer = gmxMap.layersByID['77269285D1D94509B2EAA9529449DF26'];
                     layer.bindPopup('', { maxWidth: 560 });
-                }
-                ,init: function(gmxMap, map) {
-                    var layers = {
-                        'Данные АИС': gmxMap.layersByID['77269285D1D94509B2EAA9529449DF26']
-                    };
-
-                    for (var name in layers) {
-                        map.gmxLayersControl.addOverlay(layers[name], name);
-                    }
-                    gmxMap.layersByID['77269285D1D94509B2EAA9529449DF26'].setZIndex(2000112);
                 },
-                initBaseLayers: function(gmxMap, map, mapProp) {
-                    var blm = map.gmxBaseLayersManager;
-                    var baseLayers = [
-                        'Radarsat-2 синтез каналов: HV, HH, HH-HV',
-                        'Radarsat-2 поляризация HV',
-                        'Radarsat-2 поляризация HH'
+                afterInitBaseLayers: function(gmxMap, map, mapProp) {
+                    var layer = gmxMap.layersByID['77269285D1D94509B2EAA9529449DF26'];
+                    map.gmxLayersControl.addOverlay(layer, 'Данные АИС');
+                    layer.setZIndex(2000112);
+
+                    var blm = map.gmxBaseLayersManager,
+                        hybrid = blm.get('hybrid'),
+                        hybridLayers = hybrid.getLayers();
+
+                    map.gmxLayersControl.removeLayer(hybrid);
+                    var activeIDs = [],
+                        baseLayers = [
+                        { id: '9EDFB2CB13254D198E8CB6BC44BC1D3E', name: 'Radarsat-2 синтез каналов: HV, HH, HH-HV'},
+                        { id: '153DF37CEA1040058FD75980393668D8', name: 'Radarsat-2 поляризация HV'},
+                        { id: '48DBAEBCBE5948DBB952BC254DC181B5', name: 'Radarsat-2 поляризация HH'}
                     ];
-                    blm.add(baseLayers[0], {
-                        rus: baseLayers[0],
-                        eng: baseLayers[0],
-                        layers:[gmxMap.layersByID['9EDFB2CB13254D198E8CB6BC44BC1D3E']]
+                    baseLayers.map(function(it) {
+                        activeIDs.push(it.name);
+                        blm.add(it.name, {
+                            layers:[
+                                hybridLayers[0],
+                                gmxMap.layersByID[it.id].setZIndex(500000),
+                                hybridLayers[1]
+                            ]
+                        });
                     });
-                    blm.add(baseLayers[1], {
-                        rus: baseLayers[1],
-                        eng: baseLayers[1],
-                        layers:[gmxMap.layersByID['153DF37CEA1040058FD75980393668D8']]
-                    });
-                    blm.add(baseLayers[2], {
-                        rus: baseLayers[2],
-                        eng: baseLayers[2],
-                        layers:[gmxMap.layersByID['48DBAEBCBE5948DBB952BC254DC181B5']]
-                    });
-                    blm.setActiveIDs(baseLayers);
-                    blm.setCurrentID(baseLayers[0]);
+                    blm.setActiveIDs(activeIDs);
+                    blm.setCurrentID(activeIDs[0]);
                 }
-                
             },
             ndvi: { // Мониторинг объектов сельского хозяйства с использованием NDVI
                 id: 'YIT5H',
-                init: function(gmxMap, map) {
-                    var ndviLayers = {
-                        'NDVI на 11-07-2012': gmxMap.layersByID['076F16BAE008401481F1C3D08B2A13DA'],
-                        'Крутизна склонов': gmxMap.layersByID['DD5042D37D664149BB9D67FCBDA040E1'],
-                        'Абсолютная высота': gmxMap.layersByID['7B35552E4E734E3B866C000DB999D38D']
-                    };
-                    for (var name in ndviLayers) {
-                        map.gmxLayersControl.addOverlay(ndviLayers[name], name);
-                    }
-                    map.on('overlayadd', function(ev) {
-                        var current = ev.name;
-                        setTimeout(function () {
-                            for (var name in ndviLayers) {
-                                if (current !== name) {
-                                    map.gmxLayersControl.unSetActiveBaseLayer(name);
-                                    //map.gmxLayersControl.activeBaseLayerInput.checked = false;
-                                }
-                            }
-                        }, 0);
+                afterInitBaseLayers: function(gmxMap, map, mapProp) {
+                    var blm = map.gmxBaseLayersManager,
+                        hybrid = blm.get('hybrid'),
+                        hybridLayers = hybrid.getLayers();
+
+                    map.gmxLayersControl.removeLayer(hybrid);
+                    gmxMap.layersByID['0BD2F4663F1C4D75BA9F43924E4F453E'].setZIndex(-500001);
+                    var activeIDs = [],
+                        baseLayers = [
+                        { id: '076F16BAE008401481F1C3D08B2A13DA', name: 'NDVI на 11-07-2012'},
+                        { id: '9FFB0FC31FAF496C895B3A2F25EB9484', name: 'Крутизна склонов'},
+                        { id: '07D54252CE96415FA6CECA0034F8000B', name: 'Абсолютная высота'}
+                    ];
+                    baseLayers.map(function(it) {
+                        activeIDs.push(it.name);
+                        blm.add(it.name, {
+                            layers:[
+                                hybridLayers[0],
+                                gmxMap.layersByID[it.id].setZIndex(500000)
+                                // ,
+                                // hybridLayers[1]
+                            ]
+                        });
                     });
+                    
+                    blm.setActiveIDs(activeIDs);
+                    blm.setCurrentID(activeIDs[1]);
                 },
                 options: { attributionControl: false, zoomControl: false, scrollWheelZoom: false, zoom: 11, center: new L.LatLng(54.61028, 82.221679) }
             },
@@ -274,6 +260,7 @@
 
                             blm.setActiveIDs(baseLayers);
                             if (currentID) blm.setCurrentID(currentID);
+                            if (attr.afterInitBaseLayers) attr.afterInitBaseLayers(gmxMap, map, mapProp);
                         });
                     }
                     //добавляем кастомные балуны и начальные настройки карты
@@ -284,8 +271,8 @@
                 });
             }
         };
-        showMap('ice');
-        //showMap('flood');
+        //showMap('ice');
+        showMap('ndvi');
 
         function listener(event){
             if (mapsIDs[event.data]) showMap(event.data);
