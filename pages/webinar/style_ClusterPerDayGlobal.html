@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<title>GeoMixer Vector Layer Animation</title>
+	<meta charset="utf-8" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0px;
+        }
+		
+        #controls {
+            position: absolute;
+			left: 54px;
+			top: 11px;
+			z-index: 1;
+			background-color: #ffffff;
+			padding: 13px 15px 13px 13px;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+        }
+		
+		#slider {
+			width: 300px;
+		}
+		#timeInfo {
+			text-align: center;
+			padding-top: 12px;
+		}
+		#auto {
+            display: none;
+		}
+        
+    </style>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+    <script src="../../../Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
+<!--    <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script> -->
+
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+</head>
+<body>
+	<div id="controls">
+		<div id="slider"></div>
+		<div id="timeInfo"><span id="curDate">Loading data...</span><span id="auto"><input type="checkbox" checked id="autochkbox" /> auto</span></div>
+	</div>
+
+	<div id="map" style="width: 100%; height: 100%"></div>
+	
+	<script>
+        var map = L.map('map').setView([30, 0], 3);
+
+        L.tileLayer('http://{s}.tile.osm.kosmosnimki.ru/kosmo/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+        }).addTo(map);
+
+        var updateInfo = function(currentDate) {
+            var zz = function(x) { return x < 10 ? "0" + x : x}
+            var dateStr = zz(currentDate.getUTCDate()) + '.' + zz(currentDate.getUTCMonth() + 1) + '.' + zz(currentDate.getUTCFullYear());
+            document.getElementById('curDate').innerHTML = dateStr;
+        }
+        
+        var startDate = new Date('2013/11/01'),
+            oneDay = 1000*60*60*24,	// milliseconds in one day
+            now = startDate.getTime(),
+            ddt1 = new Date( now - now % oneDay - oneDay), //beginning of the UTC day
+            ddt2 = new Date(ddt1.getTime() + 20*oneDay);
+
+        var autochkbox = document.getElementById('autochkbox');
+        
+        var heatmap = null; 
+        L.gmx.loadLayer('NDFYK', '3E88643A8AC94AFAB4FD44941220B1CE', {
+            beginDate: new Date(ddt2.valueOf() - oneDay),
+            endDate: ddt2
+        }).then(function(hotspotLayer) {
+            hotspotLayer.addTo(map);
+            var style = {
+                regularStyle: {
+                    fillColor: 0xff0000,
+                    iconGeomSize: 20,
+                    iconCircle: true
+                },
+                hoveredStyle: {
+                    fillColor: 0x00ff00,
+                    iconGeomSize: 32,
+                    iconCircle: true
+                }
+            };
+            hotspotLayer.setStyle(style);
+            var nextDay = function(val) {
+                updateInfo(new Date(val - oneDay));
+                hotspotLayer.setDateInterval(new Date(val - oneDay), new Date(val));
+            }
+            var chkAuto = function() {
+                if (autochkbox.checked) {
+                    var zn = $('#slider').slider("value");
+                    if (zn == ddt2.valueOf()) zn = ddt1.valueOf();
+                    zn += oneDay;
+                    $('#slider').slider("value", zn);
+                    nextDay(zn);
+                }
+            }
+            autochkbox.onchange = chkAuto;
+
+            updateInfo(new Date(ddt2.valueOf() - oneDay));
+            document.getElementById('auto').style.display = 'inline';
+            $('#slider').slider({
+                min: ddt1.valueOf() + oneDay,
+                max: ddt2.valueOf(),
+                step: oneDay,
+                value: ddt1.valueOf(),
+                slide: function(event, ui) {
+                    nextDay(ui.value);
+                }
+            });
+            var zn = $('#slider').slider("value");
+            nextDay(zn);
+            
+        })
+	</script>
+</body>
+</html>
