@@ -78,6 +78,9 @@
             beginDate: new Date(ddt2.valueOf() - oneDay),
             endDate: ddt2
         }).then(function(hotspotLayer) {
+            hotspotLayer.setFilter(function(it) {
+                return (it.id === 55411307);
+            });
             hotspotLayer.addTo(map);
             var style = {
                 regularStyle: {
