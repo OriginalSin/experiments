@@ -195,18 +195,16 @@
                         .setContent(txt)
                         .openOn(this.map);
 
-
                     var layer = gmxMap.layersByID['5B6E92750658420C9CEB25F5408E02FA'];
                     layer.setZIndex(-500000);
                     var tmap = layer._map;
                     if (tmap) {
-                        //tmap.gmxLayersControl.options.hideBaseLayers = true;
-                        var nadp = L.tileLayer(getURL('kosmohyb'), {
-                            maxZoom: 18,
-                            gmxCopyright: getCopyright2()
-                        }).addTo(tmap);
-                        tmap.gmxLayersControl.addOverlay(nadp, 'Надписи');
-
+                        tmap.gmxLayersControl.options.hideBaseLayers = true;
+                        // var nadp = L.tileLayer(getURL('kosmohyb'), {
+                            // maxZoom: 18,
+                            // gmxCopyright: getCopyright2()
+                        // }).addTo(tmap);
+                        // tmap.gmxLayersControl.addOverlay(nadp, 'Надписи');
                         layer = gmxMap.layersByID['03CBA68FAC6F4E0DB6B5A63D4EA121B4'];
                         if (layer && tmap) {
                             var title = layer._gmx.properties.title || 'unknown layer'; // 'Затопленные жилые хозяйственные зоны'
@@ -214,7 +212,12 @@
                         }
                     }
                 },
-                initBaseLayers: function(gmxMap, map, mapProp) {
+                afterInitBaseLayers: function(gmxMap, map, mapProp) {
+                    var blm = map.gmxBaseLayersManager,
+                        hybrid = blm.get('hybrid'),
+                        hybridLayers = hybrid.getLayers();
+                    hybridLayers[1].setZIndex(3000000);
+                    hybridLayers[1].getContainer().style.pointerEvents = 'none';
                 }
             }
         };
@@ -272,7 +275,7 @@
             }
         };
         //showMap('ice');
-        showMap('ndvi');
+        showMap('flood');
 
         function listener(event){
             if (mapsIDs[event.data]) showMap(event.data);

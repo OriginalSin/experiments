@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<title>GeoMixer Vector Layer Animation</title>
+	<meta charset="utf-8" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0px;
+        }
+		
+        #controls {
+            position: absolute;
+			left: 54px;
+			top: 11px;
+			z-index: 1;
+			background-color: #ffffff;
+			padding: 13px 15px 13px 13px;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+        }
+    </style>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+
+<!--    <script src="../../../Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script> -->
+    <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
+</head>
+<body>
+	<div id="controls">
+		<div id="timeInfo">Тест proxy</div>
+	</div>
+
+	<div id="map" style="width: 100%; height: 100%"></div>
+	
+	<script>
+        var map = L.map('map').setView([30, 0], 3);
+
+        L.gmx.loadLayer('295150326EDA478CACC87712E2CE18B7', 'E50931C3B2DD4E0FA2C03366552EEAA1', {
+            //hostName: 'testemis01.gazprom-neft.local',
+            //apiKey: 'U92596WMIH'
+        }).then(function(mapru) {
+            mapru.addTo(map);
+        });
+       
+/*
+        //L.tileLayer('http://{s}.tile.osm.kosmosnimki.ru/kosmo/{z}/{x}/{y}.png').addTo(map);
+
+        L.tileLayer('http://{s}.tile.osm.kosmosnimki.ru/kosmo/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Scanex'
+        }).addTo(map);
+
+*/
+	</script>
+</body>
+</html>
