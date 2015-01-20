@@ -39,6 +39,8 @@
         var map = L.map('map').setView([30, 0], 3);
 
         L.gmx.loadLayer('295150326EDA478CACC87712E2CE18B7', 'E50931C3B2DD4E0FA2C03366552EEAA1', {
+            hostName: 'testemis01.gazprom-neft.local/kosmosnimki/maps',
+            apiKey: 'J1M7SITY5X'            
             //hostName: 'testemis01.gazprom-neft.local',
             //apiKey: 'U92596WMIH'
         }).then(function(mapru) {
@@ -46,6 +48,8 @@
         });
        
 /*
+L.tileLayer('http://testemis01.gazprom-neft.local/kosmosnimki/osm/{s}/{z}/{x}/{y}.png').addTo(map);
+
         //L.tileLayer('http://{s}.tile.osm.kosmosnimki.ru/kosmo/{z}/{x}/{y}.png').addTo(map);
 
         L.tileLayer('http://{s}.tile.osm.kosmosnimki.ru/kosmo/{z}/{x}/{y}.png', {

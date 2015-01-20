@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>GmxControls Leaflet Quick Start Guide Example</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+
+    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script>
+    <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
+
+	<script src="http://scanex.github.io/gmxControls/src/js/L.Control.initDefault.js"></script>
+
+	<script src="initBaseLayerManagerGPN.js"></script>
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+        
+        #infoPanel {
+            position: absolute;
+			left: 0px;
+			right: 0px;
+			top: 21px;
+            text-align: center;
+			z-index: 1;
+        }
+        
+        #info {
+			background-color: #ffffff;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+	<div id="map"></div>
+    <div id="infoPanel">
+        <span id="info">
+            Test init BaseLayersManager for GPN
+        </span>
+    </div>
+
+	<script>
+		var map = new L.Map('map', {layers: [], center: new L.LatLng(50, 20), zoom: 3});
+        //window.language = 'eng';
+        map.addControl(L.control.gmxLayers(map.gmxBaseLayersManager));
+        map.gmxBaseLayersManager.initDefaults().then(function() {
+            var baseLayers = ['map', 'hybrid', 'satellite', 'OSM', 'relief', 'outline', 'grey', '2GIS', 'osm_spring', 'osm_summer', 'osm_autumn', 'osm_winter', 'osm_night', 'OSMHybrid'],
+                currentID = baseLayers[0];
+            map.gmxBaseLayersManager.setActiveIDs(baseLayers).setCurrentID(currentID);
+        });
+	</script>
+</body>
+</html>
