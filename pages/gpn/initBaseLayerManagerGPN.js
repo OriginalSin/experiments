@@ -4,8 +4,9 @@
 L.gmxBaseLayersManager.prototype.initDefaults = function (attr) {
     var blm = this,
         zIndexOffset = 2000000,
-        mapID = attr && attr.mapID ? attr.mapID : '1D30C72D02914C5FB90D1D448159CAB6',
-        //mapID = attr && attr.mapID ? attr.mapID : 'E248D9467A3F40F4833D382EB3A82A2D',
+        //mapID = attr && attr.mapID ? attr.mapID : '1D30C72D02914C5FB90D1D448159CAB6',
+        mapID = attr && attr.mapID ? attr.mapID : '7CA423DDBF9245BD927ACC36F55D4B99',
+        hostName = '',
         lang = L.gmxLocale.getLanguage(),
         _gtxt = function (key) {
             return L.gmxLocale.getText(key) || key;
@@ -70,15 +71,25 @@ L.gmxBaseLayersManager.prototype.initDefaults = function (attr) {
         }
     };
 
+    if (prefix !== 'maps.kosmosnimki.ru/') {
+        hostName = prefix + 'maps';
+        attr = {
+            hostName: hostName,
+            mapID: mapID,
+            apiKey: 'J1M7SITY5X'
+        };
+    }
+
     var layersGMX = [{
         mapID: mapID,
-        layerID: 'C9458F2DCB754CEEACC54216C7D1EB0A',  // satellite
+        layerID: 'B293E8FA41D14E18B13D450165017F64',  // satellite
         type: 'satellite',
         rus: 'Снимки',
         eng: 'Satellite',
         overlayColor: '#ffffff',
         icon: iconPrefix + 'basemap_satellite.png'
     }];
+    if (hostName) layersGMX[0].hostName = hostName;
 
     if (lang === 'rus') {
         baseLayers.map = { rus: 'Карта', eng: 'Map',
@@ -97,14 +108,9 @@ L.gmxBaseLayersManager.prototype.initDefaults = function (attr) {
     } else {
         layersGMX.push({mapID: mapID, layerID: '5269E524341E4E7DB9D447C968B20A2C', type: 'map', rus: 'Карта', eng: 'Map', icon: iconPrefix + 'basemap_rumap.png'});     // rumap
         layersGMX.push({mapID: mapID, layerID: 'BCCCE2BDC9BF417DACF27BB4D481FAD9', type: 'hybrid', rus: 'Гибрид', eng: 'Hybrid'});    // hybrid
+        if (hostName) layersGMX[1].hostName = layersGMX[2].hostName = hostName;
     }
     var def = new L.gmx.Deferred();
-    if (prefix !== 'maps.kosmosnimki.ru/') attr = {
-        hostName: prefix + (prefix !== 'maps.kosmosnimki.ru/' ? 'maps' : ''),
-        mapID: mapID,
-        apiKey: 'J1M7SITY5X'
-    };
-
     L.gmx.loadLayers(layersGMX, attr).then(function() {
         var layerByLayerID = {};
         for (var i = 0, len = arguments.length; i < len; i++) {
