@@ -80,15 +80,17 @@ L.gmxBaseLayersManager.prototype.initDefaults = function (attr) {
         };
     }
 
-    var layersGMX = [{
-        mapID: mapID,
-        layerID: 'B293E8FA41D14E18B13D450165017F64',  // satellite
-        type: 'satellite',
-        rus: 'Снимки',
-        eng: 'Satellite',
-        overlayColor: '#ffffff',
-        icon: iconPrefix + 'basemap_satellite.png'
-    }];
+    var layersGMX = [
+        {
+            mapID: mapID,
+            layerID: 'B293E8FA41D14E18B13D450165017F64',  // satellite
+            type: 'satellite',
+            rus: 'Снимки',
+            eng: 'Satellite',
+            overlayColor: '#ffffff',
+            icon: iconPrefix + 'basemap_satellite.png'
+        }
+    ];
     if (hostName) layersGMX[0].hostName = hostName;
 
     if (lang === 'rus') {
@@ -111,22 +113,43 @@ L.gmxBaseLayersManager.prototype.initDefaults = function (attr) {
         if (hostName) layersGMX[1].hostName = layersGMX[2].hostName = hostName;
     }
     var def = new L.gmx.Deferred();
-    L.gmx.loadLayers(layersGMX, attr).then(function() {
-        var layerByLayerID = {};
-        for (var i = 0, len = arguments.length; i < len; i++) {
-            var layer = arguments[i],
-                gmx = layer._gmx,
-                mapName = gmx.mapName,
-                layerID = gmx.layerID;
-            if (!(mapName in layerByLayerID)) layerByLayerID[mapName] = {};
-            layerByLayerID[mapName][layerID] = layer;
-        }
+    
+    var map = blm._map;
+    //L.gmx.loadMap(mapID, {leafletMap: map, setZIndex: true, apiKey: 'J1M7SITY5X'}).then(function(gmxMap) {
+    L.gmx.loadMap(mapID, {leafletMap: map, apiKey: 'J1M7SITY5X'}).then(function(gmxMap) {
+        var layerByLayerID = gmxMap.layersByID,
+            ikonosGPN = null,
+            overlay = null;
+
         for (var i = 0, len = layersGMX.length; i < len; i++) {
             var info = layersGMX[i],
                 type = info.type;
             if (type === 'hybrid') continue;
+            baseLayers[type] = {
+                rus: info.rus,
+                eng: info.eng,
+                icon: info.icon,
+                overlayColor: info.overlayColor || '#00',
+                layers:[layerByLayerID[info.layerID]]
+            };
             if (type === 'satellite') {
-                var satellite = layerByLayerID[info.mapID][info.layerID];        // satellite
+                ikonosGPN = gmxMap.layersByTitle['Каталог Ikonos для Газпром-Нефть'];
+                //ikonosGPN = layerByLayerID['Вставить ID'];    // Вставить ID слоя "Каталог Ikonos для Газпром-Нефть"
+                ikonosGPN.options.clickable = false;
+                
+                baseLayers[type].layers.push(ikonosGPN);
+
+                var satellite = layerByLayerID[info.layerID];       // satellite
+                if(lang === 'rus') {
+                    overlay = L.tileLayer.Mercator(getURL('o'), {               // rus Overlay
+                        maxZoom: 19,
+                        maxNativeZoom: 17,
+                        clickable: false
+                    });
+                } else {
+                    overlay = layerByLayerID['BCCCE2BDC9BF417DACF27BB4D481FAD9'];    // eng Overlay
+                    overlay.options.clickable = false;
+                }
                 baseLayers.hybrid = {
                     rus: 'Гибрид',
                     eng: 'Hybrid',
@@ -135,27 +158,12 @@ L.gmxBaseLayersManager.prototype.initDefaults = function (attr) {
                     layers: [
                         satellite        // satellite
                         ,
-                        (lang === 'rus' ?
-                            L.tileLayer.Mercator(getURL('o'), {         // rus Overlay
-                                maxZoom: 19,
-                                maxNativeZoom: 17,
-                                attribution: 'Scanex'
-                            })
-                            :
-                            layerByLayerID[info.mapID]['BCCCE2BDC9BF417DACF27BB4D481FAD9']    // eng Overlay
-                        )
+                        ikonosGPN
+                        ,
+                        overlay
                     ]
                 };
-                //baseLayers.hybrid.layers[1].setZIndex(zIndexOffset);
-                //baseLayers.OSMHybrid.layers.unshift(satellite);
             }
-            baseLayers[type] = {
-                rus: info.rus,
-                eng: info.eng,
-                icon: info.icon,
-                overlayColor: info.overlayColor || '#00',
-                layers:[layerByLayerID[info.mapID][info.layerID]]
-            };
         }
         for(var id in baseLayers) {
             var baseLayer = baseLayers[id];

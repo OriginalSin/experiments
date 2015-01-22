@@ -34,8 +34,8 @@
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 
-<!--    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script> -->
-    <script src="../../../buildAPIV2/build/leaflet-geomixer-all-dev.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script>
+    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script>
+<!--    <script src="../../../buildAPIV2/build/leaflet-geomixer-all-dev.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script> -->
     <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
 </head>
 <body>
@@ -78,6 +78,8 @@
                         hybridLayers = hybrid.getLayers();
 
                     map.gmxLayersControl.removeLayer(hybrid);
+                    hybridLayers[0].addTo(map);
+                    
                     var activeIDs = [],
                         baseLayers = [
                         { id: '9EDFB2CB13254D198E8CB6BC44BC1D3E', name: 'Radarsat-2 синтез каналов: HV, HH, HH-HV'},
@@ -88,14 +90,13 @@
                         activeIDs.push(it.name);
                         blm.add(it.name, {
                             layers:[
-                                hybridLayers[0],
-                                gmxMap.layersByID[it.id].setZIndex(500000),
-                                hybridLayers[1]
+                                gmxMap.layersByID[it.id].setZIndex(500000)
                             ]
                         });
                     });
                     blm.setActiveIDs(activeIDs);
                     blm.setCurrentID(activeIDs[0]);
+                    hybridLayers[1].addTo(map);
                 }
             },
             ndvi: { // Мониторинг объектов сельского хозяйства с использованием NDVI
@@ -106,6 +107,8 @@
                         hybridLayers = hybrid.getLayers();
 
                     map.gmxLayersControl.removeLayer(hybrid);
+                    hybridLayers[0].addTo(map);
+
                     gmxMap.layersByID['0BD2F4663F1C4D75BA9F43924E4F453E'].setZIndex(-500001);
                     var activeIDs = [],
                         baseLayers = [
@@ -117,9 +120,9 @@
                         activeIDs.push(it.name);
                         blm.add(it.name, {
                             layers:[
-                                hybridLayers[0],
+                                //hybridLayers[0],
                                 gmxMap.layersByID[it.id].setZIndex(500000)
-                                // ,
+								// ,
                                 // hybridLayers[1]
                             ]
                         });
@@ -127,6 +130,7 @@
                     
                     blm.setActiveIDs(activeIDs);
                     blm.setCurrentID(activeIDs[1]);
+                    hybridLayers[1].addTo(map);
                 },
                 options: { attributionControl: false, zoomControl: false, scrollWheelZoom: false, zoom: 11, center: new L.LatLng(54.61028, 82.221679) }
             },
@@ -196,7 +200,7 @@
                         .openOn(this.map);
 
                     var layer = gmxMap.layersByID['5B6E92750658420C9CEB25F5408E02FA'];
-                    layer.setZIndex(-500000);
+                    //layer.setZIndex(-500000);
                     var tmap = layer._map;
                     if (tmap) {
                         tmap.gmxLayersControl.options.hideBaseLayers = true;
@@ -217,7 +221,6 @@
                         hybrid = blm.get('hybrid'),
                         hybridLayers = hybrid.getLayers();
                     hybridLayers[1].setZIndex(3000000);
-                    hybridLayers[1].getContainer().style.pointerEvents = 'none';
                 }
             }
         };
@@ -274,8 +277,7 @@
                 });
             }
         };
-        //showMap('ice');
-        showMap('flood');
+        showMap('ice');
 
         function listener(event){
             if (mapsIDs[event.data]) showMap(event.data);

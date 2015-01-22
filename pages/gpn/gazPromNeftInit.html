@@ -10,6 +10,8 @@
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
 
     <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script>
+<!--    <script src="http://localhost:8080/newt2/leaflet/buildAPIV2/dist/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script> -->
+
     <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
 
 	<script src="http://scanex.github.io/gmxControls/src/js/L.Control.initDefault.js"></script>
@@ -52,7 +54,7 @@
         //window.language = 'eng';
         map.addControl(L.control.gmxLayers(map.gmxBaseLayersManager));
         map.gmxBaseLayersManager.initDefaults().then(function() {
-            var baseLayers = ['map', 'hybrid', 'satellite', 'OSM', 'relief', 'outline', 'grey', '2GIS', 'osm_spring', 'osm_summer', 'osm_autumn', 'osm_winter', 'osm_night', 'OSMHybrid'],
+            var baseLayers = ['map', 'hybrid', 'satellite', 'OSM'],
                 currentID = baseLayers[0];
             map.gmxBaseLayersManager.setActiveIDs(baseLayers).setCurrentID(currentID);
         });
