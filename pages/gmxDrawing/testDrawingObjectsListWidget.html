@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
 
-	<script src="http://scanex.github.io/gmxControls/build/L.Control.gmxDrawing-dev.js"></script>
+	<script src="http://scanex.github.io/gmxControls/build/gmxControls-dev.js"></script>
     <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxIcon.css" />
     <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxDrawing.css" />
     <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
@@ -27,6 +27,10 @@
      
     <link rel="stylesheet" href="drawingObjectsListWidget/drawingObjectsListWidget.css" />
 	<script src="drawingObjectsListWidget/drawingObjectsListWidget.js"></script>
+
+	<script src="../externals/jquery-ui/jquery-ui.min.js"></script>
+	<link rel="stylesheet" href="../externals/iris/iris.css" />
+	<script src="../externals/iris/iris.js"></script>
 
     <style>
         html, body, #map {
@@ -55,6 +59,16 @@
             border-radius: 5px;
             box-shadow: 0 1px 7px rgba(0,0,0,0.65);
             padding: 10px;
+        }
+        .ui-dialog {
+            border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0, 0, 0, 0.65);
+        }
+        .ui-draggable-handle {
+            cursor: move;
+        }
+        .ui-dialog-titlebar-close .ui-button-text {
+            display: none;
         }
     </style>
 </head>
@@ -110,6 +124,65 @@
             marker = L.marker(latlng, {draggable: true, title: 'Text example'}),
             drawPoint = map.gmxDrawing.add(marker, {});
 
+		var pickStyle = function (feature){
+			var dlg = $('<div></div>', {title: 'Choose color'})
+				.css({
+					display: 'none',
+					zIndex: 20000
+				})
+				.appendTo('body');
+						
+			var linesStyle = feature.getLinesStyle();
+			var pointsStyle = feature.getPointsStyle();
+			var p = $('<input>', {type: 'text', value: linesStyle.color})
+				.css({
+					width: 200
+				})
+				.appendTo(dlg);
+			
+			p.iris({
+				hide: false,
+				width: 200,
+				change: function(e, ui){				
+					feature.setLinesStyle({
+						color: ui.color.toString()
+					});
+					feature.setPointsStyle({
+						color: ui.color.toString()
+					});
+				}
+			});
+						
+			$(dlg).dialog({
+				resizable: false,				
+				modal: true,	
+				width: 250,
+				closeText: 'Close',
+				buttons: [
+					{
+						text: 'OK',
+						click: function(){											
+							$(this).dialog('close');							
+							$(this).remove();
+						}
+					},
+					{
+						text: 'Cancel',
+						click: function(){
+							feature.setLinesStyle({
+									color: linesStyle.color
+							});
+							feature.setPointsStyle({
+								color: pointsStyle.color
+							});
+							$(this).dialog('close');							
+							$(this).remove();
+						}
+					}
+				]
+			});	
+		};
+
         L.Control.gmxDrawingObjectsListWidget = L.Control.extend({
             options: {
                 position: 'topright',
@@ -124,6 +197,14 @@
                     var drawingObjectsListWidget = new nsGmx.DrawingObjectsListWidget(container, {
                         drawingManager: map.gmxDrawing
                     });
+                    $(drawingObjectsListWidget).on('styleButtonClick', function(e, feature){
+                        pickStyle(feature);
+                    });
+                    $(drawingObjectsListWidget).on('objectToggle', function(e, feature){
+                        if (feature._map) map.removeLayer(feature);
+                        else map.addLayer(feature);
+                    });
+                    
                 return container;
             }
         });
