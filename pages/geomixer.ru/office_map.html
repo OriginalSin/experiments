@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Наши офисы</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+
+    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=E5FB6CCB5D23B5E119D2F1B26BCC57BD"></script>
+    <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
+
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+    </style>
+</head>
+<body>
+	<div id="map"></div>
+
+	<script>
+		var map = new L.Map('map', {layers: [], attributionControl: false, zoomControl: false, center: new L.LatLng(55.672943, 37.475738), zoom: 10});
+        //загружаем карту ГеоМиксера
+        L.gmx.loadMap('OYR9B', {leafletMap: map, setZIndex: true});
+        //window.language = 'eng';
+        var hide = L.control.gmxHide();
+        map
+            .addControl(hide)
+            .addControl(L.control.gmxZoom())        // default options = {zoomslider: true}
+            .addControl(L.control.gmxDrawing())
+            .addControl(L.control.gmxBottom())
+            .addControl(L.control.gmxLocation())    // default options = {position: 'bottomright'}
+            .addControl(L.control.gmxCopyright())   // default options = {position: 'bottomleft'}
+            .addControl(L.control.gmxCenter())      // default options = {color: '#216b9c'}
+            .addControl(L.control.gmxLogo())
+            .addControl(L.control.gmxLayers(map.gmxBaseLayersManager));
+        map.gmxBaseLayersManager.initDefaults().then(function() {
+            var baseLayers = ['map', 'hybrid', 'satellite', 'OSM'],
+                currentID = baseLayers[0];
+            map.gmxBaseLayersManager.setActiveIDs(baseLayers).setCurrentID(currentID);
+        });
+        hide.setActive(false);
+	</script>
+</body>
+</html>
