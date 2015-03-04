@@ -25,12 +25,11 @@
 
 	<script>
 		var map = new L.Map('map', {layers: [], attributionControl: false, zoomControl: false, center: new L.LatLng(55.672943, 37.475738), zoom: 10});
+        //window.language = 'eng';
         //загружаем карту ГеоМиксера
         L.gmx.loadMap('OYR9B', {leafletMap: map, setZIndex: true});
-        //window.language = 'eng';
-        var hide = L.control.gmxHide();
         map
-            .addControl(hide)
+            .addControl(L.control.gmxHide())
             .addControl(L.control.gmxZoom())        // default options = {zoomslider: true}
             .addControl(L.control.gmxDrawing())
             .addControl(L.control.gmxBottom())
@@ -44,7 +43,10 @@
                 currentID = baseLayers[0];
             map.gmxBaseLayersManager.setActiveIDs(baseLayers).setCurrentID(currentID);
         });
-        hide.setActive(false);
+
+        var hideMe = map.gmxControlIconManager.get('hide');
+        hideMe.setActive(false);  // Hide controls
+        
 	</script>
 </body>
 </html>
