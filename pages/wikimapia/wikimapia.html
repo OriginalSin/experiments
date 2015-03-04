@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Wikimapia Leaflet plugin</title>
+	<meta charset="utf-8" />
+    <style>
+        html, body, #map {
+            height: 100%;
+            margin: 0px;
+        }
+    </style>
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+
+    <script src="http://leaflet.github.com/Leaflet.label/leaflet.label.js"></script>
+    <link href="http://leaflet.github.com/Leaflet.label/leaflet.label.css" rel="stylesheet" />
+    
+	<script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+
+    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=7B28B42EF910807AA04822E29CFBCC84"></script>
+    <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
+
+    <script src="leaflet.wikimapia.js"></script>
+<!-- https://github.com/olegsmetanin/leaflet.wikimapia -->    
+</head>
+<body>
+	<div id="map"></div>
+	<script>
+		var map = L.map('map').setView([55.75387809204414,  37.61993408203125], 13);
+
+        map.gmxControlsManager.init({
+            gmxLocation: {scaleFormat: 'text'}
+        });
+        var blm = map.gmxBaseLayersManager;     //менеджер базовых подложек
+        blm.initDefaults().then(function() {
+            var baseLayers = ['OSM', 'satellite'],
+                currentID = baseLayers[0];
+            blm.setActiveIDs(baseLayers).setCurrentID(currentID);
+        });
+
+        var wiki= new L.WikimapiaAPI({
+            key : '60175C48-4B0C86C-A2D4D106-A5F37CAF-5A760C96-45526DF2-6D90C63B-511E68EE'
+            , onActiveFeature: function (feature, layer) {
+              if (feature.name && feature.url) {
+                  layer
+                    .bindLabel(feature.name)
+                    .bindPopup('<a target="_blank" href="'+feature.url+'">'+ feature.name + '</a>');
+              }
+            }
+            , style: function(feature) {
+              switch (feature.name) {
+                  case 'Kitai-gorod': return {color: "#ff0000"};
+              }
+          }
+        });
+
+        L.control.gmxLayers(blm)
+            .addOverlay(wiki, 'Викимапия')
+            .addTo(map);
+	</script>
+</body>
+</html>
