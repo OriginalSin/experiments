@@ -16,7 +16,7 @@ removeObserver|`removeObserver(<observer>)`|`<observer>`|Удаление обс
 getItemProperties|`getItemProperties(attribute[])`|`<Object>`|Преобразование массива атрибутов векторного объекта в Hash.
 setStyleHook|`setStyleHook(<Func>)`|`this`|Установка функции переопределения стиля отрисовки объекта. Единственный аргумент - ф-ция, которая принимает объект из слоя и возвращает (`null` - объект не отрисовывать , `<Style object>` - переопределямые свойства стиля отрисовки объекта)
 removeStyleHook|`removeStyleHook()`||Удаление функции переопределения стиля отрисовки объекта.
-setStyles|`setStyles(<`[StyleFilter](#user-content-stylefilter---объект-стиля-слоя)`>[])`|`this`| Установка массива стилей слоя.
+setStyles|`setStyles(<`[StyleFilter](#user-content-stylefilter---объект-стиля-слоя)`>[])`|`this`| Установка массива стилей слоя (Примеры: [setStyleProp.html](http://scanex.github.io/Leaflet-GeoMixer/debug/setStyleProp.html), [setStyle.html](http://scanex.github.io/Leaflet-GeoMixer/debug/setStyle.html)).
 setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-стиля-слоя)`>, <UInt>num)`|`this`|Изменение существующего стиля - под номером `num` (при отсутствии стиля команда игнорируется).
 
 ## StyleFilter - объект стиля слоя
@@ -33,16 +33,18 @@ setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-ст
 ### SQL string - строка отбора объектов
 
 Применяется в фильтрах и стилях.
-Допускаются следующие простейшие операции - `=`,  `>`, `<`, `>=`, `<=`, `LIKE`, `IN`
+
+Допускаются следующие простейшие операции: `=`,  `>`, `<`, `>=`, `<=`, `LIKE`, `IN`
+
 Поля атрибутов объектов заключаются в квадратные скобки, либо в двойные кавычки.
 
 Примеры выражений:
 
-  "sceneid" = 'irk1-e2346192'
-  [sceneid] LIKE 'irk1-e23461%'
-  [sceneid] = 'irk1-e2346192'
-  [ogc_fid] in (13, 12, 18)
-  [ogc_fid] > 12 or ogc_fid < 6
+        "sceneid" = 'irk1-e2346192'
+        [sceneid] LIKE 'irk1-e23461%'
+        [sceneid] = 'irk1-e2346192'
+        [ogc_fid] in (13, 12, 18)
+        [ogc_fid] > 12 or ogc_fid < 6
 
 ### Style object - объект стиля
     {
