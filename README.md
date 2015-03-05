@@ -1,13 +1,6 @@
 experiments
 ===========
 
-Пример|Описание|Примечание
-------|---------|-----------
-[gmxHeatMapWebGL.html](http://originalsin.github.io/experiments/pages/webglHeatMap/gmxHeatMapWebGL.html)| [WebGL Heatmap](http://leafletjs.com/plugins.html)| High performance Javascript heatmap plugin using WebGL
-[restoreView.html](http://originalsin.github.io/experiments/pages/webglHeatMap/restoreView.html)| [Leaflet.RestoreView](https://github.com/makinacorpus/Leaflet.RestoreView)| Stores and restores map view using localStorage.
-[testIframe.html](http://kosmosnimki.ru/demo/testIframe.html)| Листание карт|
-[testDrawingObjectsListWidget.html](examples/testDrawingObjectsListWidget.html)|Подключение виджета drawing objects.
-
 ### Методы
 Метод|Синтаксис|Возвращаемое значение|Описание
 ------|------|:---------:|-----------
@@ -23,8 +16,8 @@ removeObserver|`removeObserver(<observer>)`|`<observer>`|Удаление обс
 getItemProperties|`getItemProperties(attribute[])`|`<Object>`|Преобразование массива атрибутов векторного объекта в Hash.
 setStyleHook|`setStyleHook(<Func>)`|`this`|Установка функции переопределения стиля отрисовки объекта. Единственный аргумент - ф-ция, которая принимает объект из слоя и возвращает (`null` - объект не отрисовывать , `<Style object>` - переопределямые свойства стиля отрисовки объекта)
 removeStyleHook|`removeStyleHook()`||Удаление функции переопределения стиля отрисовки объекта.
-setStyles|`setStyles(<StyleFilter>[])`|`this`| Установка массива стилей слоя.
-setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-стиля-слоя)`>, <UInt>num)`|`this`|Изменение существующего стиля - под номером `num` (при отсутствии стиля).
+setStyles|`setStyles(<`[StyleFilter](#user-content-stylefilter---объект-стиля-слоя)`>[])`|`this`| Установка массива стилей слоя.
+setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-стиля-слоя)`>, <UInt>num)`|`this`|Изменение существующего стиля - под номером `num` (при отсутствии стиля команда игнорируется).
 
 ## StyleFilter - объект стиля слоя
 
@@ -32,10 +25,24 @@ setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-ст
         {  
            'MinZoom': <Uint>                 // мин. zoom (по умолчанию: 1)
            ,'MaxZoom': <Uint>                // макс.zoom (по умолчанию: 21)
-           ,'Filter': <String>               // SQL выражение стиля ()
+           ,'Filter': <SQL string>           // SQL выражение стиля (по умолчанию: `` без фильтрации)
            ,'RenderStyle': <Style object>    // стиль (Тип данных Style)  
            ,'HoverStyle': <Style object>     // hover стиль (Тип данных Style)  
         }
+
+### SQL string - строка отбора объектов
+
+Применяется в фильтрах и стилях.
+Допускаются следующие простейшие операции - `=`,  `>`, `<`, `>=`, `<=`, `LIKE`, `IN`
+Поля атрибутов объектов заключаются в квадратные скобки, либо в двойные кавычки.
+
+Примеры выражений:
+
+  "sceneid" = 'irk1-e2346192'
+  [sceneid] LIKE 'irk1-e23461%'
+  [sceneid] = 'irk1-e2346192'
+  [ogc_fid] in (13, 12, 18)
+  [ogc_fid] > 12 or ogc_fid < 6
 
 ### Style object - объект стиля
     {
@@ -100,7 +107,6 @@ setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-ст
         labelAnchor: [<UInt>, <UInt>],   // смещение label X,Y - зависит от label.dx, label.dy, label.align
     }
 
-
 **Expression** - строка арифметического выражения результатом которой должно быть число (**Float**)
 В выражении допускаются следующие опреации (+ - * /)
 В квадратных скобках могут указываться имена атрибутов визуализируемого объекта.
@@ -157,3 +163,11 @@ id|`<UInt>`|`0`|Идентификатор объекта.
 properties|`<attribute[]>`|[]|Массив атрибутов (первый элемент - id объекта, последний - геометрия части объекта).
 dataOption|`<Object>`|null|Дополнительная информация.
 item|`<Object>`|null|Дополнительная информация объекта.
+
+
+Пример|Описание|Примечание
+------|---------|-----------
+[gmxHeatMapWebGL.html](http://originalsin.github.io/experiments/pages/webglHeatMap/gmxHeatMapWebGL.html)| [WebGL Heatmap](http://leafletjs.com/plugins.html)| High performance Javascript heatmap plugin using WebGL
+[restoreView.html](http://originalsin.github.io/experiments/pages/webglHeatMap/restoreView.html)| [Leaflet.RestoreView](https://github.com/makinacorpus/Leaflet.RestoreView)| Stores and restores map view using localStorage.
+[testIframe.html](http://kosmosnimki.ru/demo/testIframe.html)| Листание карт|
+[testDrawingObjectsListWidget.html](examples/testDrawingObjectsListWidget.html)|Подключение виджета drawing objects.
