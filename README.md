@@ -24,7 +24,7 @@ getItemProperties|`getItemProperties(attribute[])`|`<Object>`|Преобразо
 setStyleHook|`setStyleHook(<Func>)`|`this`|Установка функции переопределения стиля отрисовки объекта. Единственный аргумент - ф-ция, которая принимает объект из слоя и возвращает (`null` - объект не отрисовывать , `<Style object>` - переопределямые свойства стиля отрисовки объекта)
 removeStyleHook|`removeStyleHook()`||Удаление функции переопределения стиля отрисовки объекта.
 setStyles|`setStyles(<StyleFilter>[])`|`this`| Установка массива стилей слоя.
-setStyle|`setStyle(<StyleFilter>, <UInt>num)`|`this`|Изменение существующего стиля - под номером `num` (при отсутствии стиля).
+setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-стиля-слоя)`>, <UInt>num)`|`this`|Изменение существующего стиля - под номером `num` (при отсутствии стиля).
 
 ## StyleFilter - объект стиля слоя
 
