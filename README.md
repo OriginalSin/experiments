@@ -23,9 +23,12 @@ setStyle|`setStyle(<`[StyleFilter](#user-content-stylefilter---объект-ст
 
       // массив стилевых фильтров слоя (по умолчанию: '[стилевой фильтр по умолчанию]')  
         {  
-           'MinZoom': <Uint>                 // мин. zoom (по умолчанию: 1)
-           ,'MaxZoom': <Uint>                // макс.zoom (по умолчанию: 21)
+           'MinZoom': <Uint>                 // мин. zoom (по умолчанию: `1`)
+           ,'MaxZoom': <Uint>                // макс.zoom (по умолчанию: `21`)
            ,'Filter': <SQL string>           // SQL выражение стиля (по умолчанию: `` без фильтрации)
+           ,'Balloon': <String>              // Шаблон балуна (поля атрибутов объектов заключаются в квадратные скобки)
+           ,'DisableBalloonOnMouseMove': <Boolean>   // отключение балунов по наведению (по умолчанию: `true`)  
+           ,'DisableBalloonOnClick': <Boolean>   // отключение балунов при `click` (по умолчанию: `false`)  
            ,'RenderStyle': <Style object>    // стиль (Тип данных Style)  
            ,'HoverStyle': <Style object>     // hover стиль (Тип данных Style)  
         }
