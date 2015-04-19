@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Rosreestr test</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+    <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+        
+        #infoPanel {
+            position: absolute;
+			left: 0px;
+			right: 0px;
+			top: 21px;
+            text-align: center;
+			z-index: 1;
+        }
+        
+        #info {
+			background-color: #ffffff;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+            padding: 10px;
+        }
+        .leaflet-clickable-raster-layer {
+            cursor: help;
+        }
+    </style>
+</head>
+<body>
+	<div id="map"></div>
+    <div id="infoPanel">
+        <span id="info">
+                L.tileLayer.WMS is used for test maps.rosreestr.ru tiles.
+        </span>
+    </div>
+
+    <script>
+        var osm = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+        });
+        var map = new L.Map('map', {
+            layers: [osm],
+            center: new L.LatLng(55.38874, 36.762657),
+            zoom: 15
+        });
+
+        var tileSize = 1024,
+            imageSR = 102100;
+
+        var rosreestr = L.tileLayer.wms('http://{s}.maps.rosreestr.ru/arcgis/rest/services/Cadastre/Cadastre/MapServer/export', {
+            tileSize: tileSize,
+            size: tileSize + ',' + tileSize,
+            bboxSR: imageSR,
+            imageSR: imageSR,
+            dpi: 96,
+            className: 'leaflet-clickable-raster-layer',
+            f: 'image',
+            service: 'WMS',
+            request: 'GetMap',
+            version: '1.1.1',
+            // styles: '',
+            format: 'png32',
+            transparent: true,
+            attribution: 'Rosreestr'
+        }).on('tileerror', function (ev) {
+//console.log('tileerror', ev);
+            target.options.errorTileUrl = ev.url + '&reget';
+        }).on('click', function (ev) {
+console.log('click', ev);
+            var cadastreServer = 'http://maps.rosreestr.ru/arcgis/rest/services/',
+                layerId = '',
+                latlng = ev.latlng,
+                point = L.Projection.Mercator.project(latlng);
+            // var geoY = merc_y(clamp_lat(mousePosY));
+
+            // $("#loader").show();
+    //Cadastre/CadastreSelected/MapServer/identify?callback=fnsuccesscallback&f=json&geometry={%22x%22%3A4112541.4322548676%2C%22y%22%3A7442105.009506179%2C%22spatialReference%22%3A{%22wkid%22%3A102100}}&tolerance=0&returnGeometry=&mapExtent={%22xmin%22%3A4095878.1600910192%2C%22ymin%22%3A7409242.001941477%2C%22xmax%22%3A4137154.1553592687%2C%22ymax%22%3A7464166.5489180405%2C%22spatialReference%22%3A{%22wkid%22%3A102100}}&imageDisplay=540%2C717%2C96&geometryType=esriGeometryPoint&sr=102100&layers=top&_=1429422648396
+
+            $.ajax(cadastreServer + 'Cadastre/CadastreSelected/MapServer/identify', {
+                crossDomain: true,
+                type: "GET",
+                contentType: "application/json; charset=utf-8",
+                async: false,
+                dataType: "jsonp",
+                jsonpCallback: 'fnsuccesscallback',
+                data: {
+                    f: 'json',
+                    geometry: '{"x":' + point.x + ',"y":' + point.y + ',"spatialReference":{"wkid":102100}}',
+                    tolerance: '0',
+                    returnGeometry: 'false',
+                    // mapExtent: '{"xmin":' + (merc_x(dExtent.minX)) + ',"ymin":' + (merc_y(dExtent.minY)) + ',"xmax":' + (merc_x(dExtent.maxX)) + ',"ymax":' + (merc_y(dExtent.maxY)) + ',"spatialReference":{"wkid":102100}}',
+                    // imageDisplay: gmxAPI.map.width() + ',' + getHeight() + ',96',
+                    geometryType: 'esriGeometryPoint',
+                    sr: '102100',
+                    layers: layerId || 'top' //top or all or layerId
+                }
+            }, function (data) {
+                if (!($.isEmptyObject(data)) && data.results && data.results.length > 0) {
+
+                    var featureSet = [];
+
+
+                    if (searchValue && data.results.length > 1) {
+                        for (var i = 0; i < data.results.length; i++) {
+                            if (data.results[i].value == searchValue) {
+                                featureSet = [data.results[i]];
+                                searchValue = null;
+                                break;
+                            }
+                        }
+                    } else {
+                        featureSet = [data.results[0]];
+                    }
+
+                    var objectType = getCadastreObjectType(featureSet[0]);
+
+                    var whereClause = '';
+                    var cadNumbers = '';
+                    for (var i = 0; i < featureSet.length; i++) {
+                        whereClause += ",'" + featureSet[i].value + "'";
+                        cadNumbers += ",'" + featureSet[i].attributes[objectType == CadastreTypes.oks ? 'Кадастровый номер' : 'Строковый идентификатор ИПГУ'] + "'";
+                    }
+
+                    if (objectType == CadastreTypes.parcel || objectType == CadastreTypes.oks) {
+                        searchParcelObject(objectType, { cadNums: "[" + cadNumbers.substring(1) + "]", onlyAttributes: false });
+                    }
+                    else {
+                        if (objectType) {
+                            searchObject(objectType, getObjectIdField(objectType) + " IN (" + whereClause.substring(1) + ")");
+                        } else {
+                            currentFeature.properties.status = "проверить вручную";
+                            dequeueRequest();
+                        }
+                    }
+
+                    if (!silent) {
+                        geometry = getGeometry_merc2wgs(featureSet[0].geometry.rings);
+                    }
+
+                } else {
+                    $("#loader").hide();
+                    $("#alert").show();
+                    if (silent) {
+                        currentFeature.properties.status = "проверить вручную";
+                        dequeueRequest();
+                    }
+                }
+            }, function () {
+                $('#loader').hide();
+                $("#alert").show();
+                if (silent) {
+                    currentFeature.properties.status = "ошибка при получении данных";
+                    dequeueRequest();
+                }
+            });
+        });
+
+        var container = rosreestr.getContainer();
+        L.DomUtil.addClass(container, 'leaflet-clickable-raster-layer');
+
+        var LayersControl = L.control.layers({
+                osm: osm
+            }, {
+                rosreestr: rosreestr
+            }, {collapsed: false}).addTo(map);
+
+
+	</script>
+</body>
+</html>
