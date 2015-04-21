@@ -77,12 +77,19 @@
         }).on('tileerror', function (ev) {
 //console.log('tileerror', ev);
             target.options.errorTileUrl = ev.url + '&reget';
-        }).on('click', function (ev) {
+        });
+        
+        window.fnsuccesscallback = function (ev) {
+console.log('fnsuccesscallback', ev);
+        }
+        
+        map.on('click', function (ev) {
 console.log('click', ev);
             var cadastreServer = 'http://maps.rosreestr.ru/arcgis/rest/services/',
                 layerId = '',
                 latlng = ev.latlng,
-                point = L.Projection.Mercator.project(latlng);
+                point = L.Projection.Mercator.project(latlng),
+                mapExtent = '{xmin:' + point.x + ',ymin:' + point.y + ',xmax:' + point.x + ',"ymax":' + point.y + ',spatialReference:{wkid:102100}}';
             // var geoY = merc_y(clamp_lat(mousePosY));
 
             // $("#loader").show();
@@ -100,8 +107,9 @@ console.log('click', ev);
                     geometry: '{"x":' + point.x + ',"y":' + point.y + ',"spatialReference":{"wkid":102100}}',
                     tolerance: '0',
                     returnGeometry: 'false',
+                    mapExtent: mapExtent,
                     // mapExtent: '{"xmin":' + (merc_x(dExtent.minX)) + ',"ymin":' + (merc_y(dExtent.minY)) + ',"xmax":' + (merc_x(dExtent.maxX)) + ',"ymax":' + (merc_y(dExtent.maxY)) + ',"spatialReference":{"wkid":102100}}',
-                    // imageDisplay: gmxAPI.map.width() + ',' + getHeight() + ',96',
+                    imageDisplay: rosreestr.options.size + ',96',
                     geometryType: 'esriGeometryPoint',
                     sr: '102100',
                     layers: layerId || 'top' //top or all or layerId
@@ -165,10 +173,12 @@ console.log('click', ev);
                     dequeueRequest();
                 }
             });
+        })
+        .on('overlayadd', function (ev) {
+            if (ev.name === 'rosreestr') {
+                L.DomUtil.addClass(rosreestr.getContainer(), 'leaflet-clickable-raster-layer');
+            }
         });
-
-        var container = rosreestr.getContainer();
-        L.DomUtil.addClass(container, 'leaflet-clickable-raster-layer');
 
         var LayersControl = L.control.layers({
                 osm: osm
