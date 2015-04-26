@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Rosreestr test</title>
+	<title>L.ImageOverlay.Pane test</title>
 	<meta charset="utf-8" />
 
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,10 +9,7 @@
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
 
-    <script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-    <script src="Deferred.js"></script>
-    <script src="gmxAPIutils.js"></script>
-    <script src="rosreestr.js"></script>
+    <script src="../src/L.ImageOverlay.Pane.js"></script>
 
     <style>
         html, body, #map {
@@ -48,7 +45,7 @@
 	<div id="map"></div>
     <div id="infoPanel">
         <span id="info">
-                L.tileLayer.WMS is used for test maps.rosreestr.ru tiles.
+                L.ImageOverlay.Pane is used to put images into tilePane.
         </span>
     </div>
 
@@ -60,13 +57,19 @@
         var map = new L.Map('map', {
             layers: [osm],
             center: new L.LatLng(55.38874, 36.762657),
-            zoom: 15
+            zoom: 17
         });
-
+        var imageOverlay = new L.ImageOverlay.Pane(
+            '17_13372_24322.jpg',
+            [[55.56180559430643, 36.727294921875014], [55.563362149710365, 36.730041503906264]]
+        );
+        imageOverlay
+            .addTo(map)
+            .setZindex(2);
         var LayersControl = L.control.layers({
                 osm: osm
             }, {
-                rosreestr: L.rosreestr
+                imageOverlay: imageOverlay
             }, {collapsed: false}).addTo(map);
 
 
