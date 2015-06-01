@@ -70,7 +70,7 @@
                 },
                 afterInitBaseLayers: function(gmxMap, map, mapProp) {
                     var layer = gmxMap.layersByID['77269285D1D94509B2EAA9529449DF26'];
-                    map.gmxLayersControl.addOverlay(layer, 'Данные АИС');
+                    //map.gmxLayersControl.addOverlay(layer, 'Данные АИС');
                     layer.setZIndex(2000112);
 
                     var blm = map.gmxBaseLayersManager,
@@ -225,6 +225,7 @@
             }
         };
         var mapsContent = document.getElementById('mapsContent');
+        var parentObj = null;
         
         var showMap = function(mapID) {
             var attr = mapsIDs[mapID],
@@ -243,6 +244,10 @@
                 //стандартная карта Leaflet с минимальным набором контролов
 				var map = L.map(idCont, attr.options);
                 attr.map = map;
+                map.on('click', function() {
+                    if (parentObj) parentObj.postMessage({userInteract: true}, "*");
+                });
+
                 
                 //загружаем карту ГеоМиксера
                 L.gmx.loadMap(attr.id, {leafletMap: map, setZIndex: true, apiKey: 'E5FB6CCB5D23B5E119D2F1B26BCC57BD'}).then(function(gmxMap) {
@@ -273,13 +278,34 @@
                     if (attr.bindPopup) attr.bindPopup(gmxMap);
                     if (attr.init) attr.init(gmxMap, map);
 
-                    map.setView(new L.LatLng(mapProp.DefaultLat, mapProp.DefaultLong), mapProp.DefaultZoom);
+                    var needMove = false,
+                        zoom = map.getZoom(),
+                        center = map.getCenter()
+
+                    if (mapProp.DefaultZoom && zoom !== mapProp.DefaultZoom) {
+                        needMove = true;
+                        zoom = mapProp.DefaultZoom;
+                    }
+                    if (mapProp.DefaultLat || mapProp.DefaultLong) {
+                        if (mapProp.DefaultLat && center.lat !== mapProp.DefaultLat) {
+                            needMove = true;
+                            center.lat = mapProp.DefaultLat;
+                        }
+                        if (mapProp.DefaultLong && center.lng !== mapProp.DefaultLong) {
+                            needMove = true;
+                            center.lng = mapProp.DefaultLong;
+                        }
+                    }
+                    if (needMove) {
+                        map.setView(center, zoom);
+                    }
                 });
             }
         };
         showMap('ice');
 
-        function listener(event){
+        function listener(event) {
+            parentObj = event.source;
             if (mapsIDs[event.data]) showMap(event.data);
         }
         if (window.addEventListener) {
