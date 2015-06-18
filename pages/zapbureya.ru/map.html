@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScanEx Web Geomixer - просмотр карты</title>
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="http://maps.kosmosnimki.ru/api/api.js?key=XOB220P9C1" charset="windows-1251"></script>
+<script>
+    createFlashMap(document.getElementById("map"), "maps.kosmosnimki.ru", "5CKHB", function(map)
+    {
+        map.moveTo(134.50012207031253, 52.00043803382754, 9);
+        map.minimizeTools();
+    });
+</script>
+</div>
+</body>
+</html>

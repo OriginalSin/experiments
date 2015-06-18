@@ -9,15 +9,17 @@
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
 
+    <link rel="stylesheet" href="http://scanex.github.io/gmxDrawing/css/L.gmxDrawing.css" />
+    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxIcon.css" />
+    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxIconGroup.css" />
+    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxDrawing.css" />
+
 	<script src="http://scanex.github.io/Leaflet.imageTransform/src/L.ImageTransform.js"></script>
 
-	<script src="http://scanex.github.io/gmxControls/build/L.Control.gmxDrawing-dev.js"></script>
-    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxIcon.css" />
-    <link rel="stylesheet" href="http://scanex.github.io/gmxControls/src/css/L.Control.gmxDrawing.css" />
     <script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
-    <link rel="stylesheet" href="http://scanex.github.io/gmxDrawing/css/L.gmxDrawing.css" />
+	<script src="http://scanex.github.io/gmxControls/build/gmxControls-dev.js"></script>
 	<script src="http://scanex.github.io/gmxDrawing/src/L.GmxDrawing.js"></script>
-	<script src="http://originalsin.github.io/Leaflet.TileLayer.Mercator/src/TileLayer.Mercator.js"></script>
+	<script src="http://scanex.github.io/Leaflet.TileLayer.Mercator/src/TileLayer.Mercator.js"></script>
 
 	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 	<script src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
@@ -115,7 +117,7 @@
             maxNativeZoom: 17,
             attribution: 'Scanex.ru'
         }),
-        map = new L.Map('map', {layers: [rumap], zoomControl: false, center: new L.LatLng(55, 39), zoom: 7});
+        map = new L.Map('map', {layers: [rumap], zoomControl: false, attributionControl: false, center: new L.LatLng(55, 39), zoom: 7});
 
         var drawRectangle = map.gmxDrawing.add(L.rectangle(
             [
@@ -137,8 +139,8 @@
                     ,satellites: 'WV03,WV02,GE01,Pleiades,QB02,KOMPSAT3,IK-2,SPOT 6,SPOT 7,WV01,EROS-B,EROS-A1,SPOT 5'
                     ,spot5products: '5,4'
                     ,archive: 'global'
-                    ,min_date: '2014-01-01'
-                    ,max_date: '2014-12-30'
+                    ,min_date: '2015-01-01'
+                    ,max_date: '2015-12-30'
                     ,min_cloud_cover: 0
                     ,max_cloud_cover: 100
                     ,every_year: false
@@ -146,7 +148,7 @@
                     ,max_off_nadir: 60
                     ,product: false
                     ,source: true
-                    ,wkt: geo
+                    ,geoJSON: geo
                 }, function(response) {
                     //console.log(arguments)
                     items = [];
@@ -344,12 +346,13 @@
         });
 
         map.addControl(new L.Control.gmxDrawingObjectsListWidget());
-        map.addControl(new L.Control.gmxDrawing());
+        map.addControl(new L.Control.gmxDrawing({items: ['Rectangle', 'Polygon', 'Polyline', 'Point']}));
         
         var find = document.getElementById("find");
         var startFind = function() {
             if (currentImage) map.removeLayer(currentImage);
-            var features = map.gmxDrawing.getFeatures();
+            getData(JSON.stringify(map.gmxDrawing.saveState()));
+            /*var features = map.gmxDrawing.getFeatures();
             if (features.length > 0) {
                 var feature = features[features.length - 1],
                     bounds = feature.getBounds(),
@@ -360,7 +363,7 @@
                 getData('[{g:"POLYGON (('+nw.lng+' '+nw.lat+', '+ne.lng+' '+ne.lat+', '+se.lng+' '+se.lat+', '+sw.lng+' '+sw.lat+'))"}]');
             } else {
                 alert('Please draw Rectangle!');
-            }
+            }*/
         }
         find.onclick = startFind;
         map.gmxDrawing
