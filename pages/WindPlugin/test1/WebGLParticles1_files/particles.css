@@ -1,0 +1,80 @@
+body {
+    font-family: sans-serif;
+    background: black;
+    color: salmon;
+    text-align: center;
+}
+
+canvas {
+    border: 1px solid gray;
+    display: inline-block;
+    cursor: none;
+}
+
+h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.description {
+    width: 500px;
+    margin: auto;
+    text-align: justify;
+    font-size: 14px;
+}
+
+.count, .fps {
+    font-weight: bold;
+}
+
+.controls {
+    text-align: left;
+    width: 550px;
+    margin: auto;
+}
+
+.controls button, .controls input {
+    width: 100px;
+    height: 25px;
+    margin: 2px 0;
+    vertical-align: middle;
+    background: #555;
+    border-radius: 4px;
+    text-shadow: 1px 1px 2px #000;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.2) inset,
+                0px 0px 0px 3px rgba(0, 0, 0, 0.1) inset;
+}
+
+.controls button:hover, .controls input:hover {
+    background: #558;
+}
+
+.controls label {
+    display: inline-block;
+    width: 90px;
+    color: pink;
+    font-weight: bold;
+}
+
+a:link, a:visited {
+    color: pink;
+}
+
+.controls .slider label {
+    font-weight: normal;
+    width: 100px;
+    height: 25px;
+    margin: 2px 0;
+}
+
+.controls .slider {
+    margin-left: 94px;
+    display: block;
+}
+
+.slider input {
+    width: 308px;
+}
