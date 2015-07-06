@@ -54,6 +54,7 @@
         gmxMap.layers.map(function(layer) {
             var props = layer.getGmxProperties();
             map.gmxLayersControl.addOverlay(layer, props.title);
+            map.gmxControlsManager.get('hide').setActive(false);
 
             var metaTag = props.MetaProperties && props.MetaProperties.mediaDescField;
             if (metaTag) {
