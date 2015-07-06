@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScanEx Web Geomixer - просмотр карты</title>
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+
+    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=XOB220P9C1"></script>
+    <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
+
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+        .kosmosnimki_balloon {
+            width: 460px;
+        }
+        .kosmosnimki_balloon div {
+            white-space: normal !important;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    var options = {attributionControl: false, zoomControl: false, scrollWheelZoom: true, zoom: 15, center: new L.LatLng(55.633227, 37.440955)}
+    var map = L.map('map', options);
+
+    //инициализируем контролы ГеоМиксера
+    map.gmxControlsManager.init({
+        gmxDrawing: null
+    });
+    var blm = map.gmxBaseLayersManager;
+    blm.initDefaults().then(function() {
+        blm.setActiveIDs(['hybrid', 'OSM']).setCurrentID('hybrid');
+    });
+    map.gmxControlsManager.get('hide').setActive(false);
+
+/*        map.addControl(L.control.gmxLayers(blm));
+
+        //добавляем подложки из карты ГеоМиксера
+        blm.initDefaults().then(function() {
+            var baseLayers = mapProp.BaseLayers,
+                currentID = mapProp.currentID || baseLayers[0];
+
+            blm.setActiveIDs(baseLayers);
+            if (currentID) blm.setCurrentID(currentID);
+        });
+        gmxMap.layers.map(function(layer) {
+            var props = layer.getGmxProperties();
+            map.gmxLayersControl.addOverlay(layer, props.title);
+            map.gmxControlsManager.get('hide').setActive(false);
+
+            var metaTag = props.MetaProperties && props.MetaProperties.mediaDescField;
+            if (metaTag) {
+                layer.on('popupopen', function(ev) {
+                    var val = ev.gmx.properties[metaTag.Value];
+                    if (val) {
+                        ev.popup.options.maxWidth = map.getSize().x / 1.4;
+                        ev.popup.setContent(val);
+                        ev.popup.update();
+                    }
+                });
+            }
+        });
+*/
+    //});
+</script>
+</div>
+</body>
+</html>
