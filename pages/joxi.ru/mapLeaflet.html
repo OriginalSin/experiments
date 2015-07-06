@@ -36,7 +36,7 @@
         gmxDrawing: null
     });
     var blm = map.gmxBaseLayersManager;
-    blm.initDefaults().then(function() {
+    blm.initDefaults({apiKey: 'E966FEDD249126B81A92821F482843A6'}).then(function() {
         blm.setActiveIDs(['hybrid', 'OSM']).setCurrentID('hybrid');
     });
     map.gmxControlsManager.get('hide').setActive(false);
