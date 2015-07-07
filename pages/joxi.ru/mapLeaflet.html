@@ -47,35 +47,6 @@
         .setContent(txt)
         .openOn(map);
     
-/*        map.addControl(L.control.gmxLayers(blm));
-
-        //добавляем подложки из карты ГеоМиксера
-        blm.initDefaults().then(function() {
-            var baseLayers = mapProp.BaseLayers,
-                currentID = mapProp.currentID || baseLayers[0];
-
-            blm.setActiveIDs(baseLayers);
-            if (currentID) blm.setCurrentID(currentID);
-        });
-        gmxMap.layers.map(function(layer) {
-            var props = layer.getGmxProperties();
-            map.gmxLayersControl.addOverlay(layer, props.title);
-            map.gmxControlsManager.get('hide').setActive(false);
-
-            var metaTag = props.MetaProperties && props.MetaProperties.mediaDescField;
-            if (metaTag) {
-                layer.on('popupopen', function(ev) {
-                    var val = ev.gmx.properties[metaTag.Value];
-                    if (val) {
-                        ev.popup.options.maxWidth = map.getSize().x / 1.4;
-                        ev.popup.setContent(val);
-                        ev.popup.update();
-                    }
-                });
-            }
-        });
-*/
-    //});
 </script>
 </div>
 </body>
