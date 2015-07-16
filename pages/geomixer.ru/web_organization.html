@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Организация</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+
+    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=7B28B42EF910807AA04822E29CFBCC84"></script>
+    <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
+
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        var map = new L.Map('map', {layers: [], center: new L.LatLng(62.083321, 35.213842), zoom: 16});
+
+        //window.language = 'eng';  // если необходимо на ангельском
+
+        //через менеджер контролов ГеоМиксера устанавливаем контролы по умолчанию 
+        map.gmxControlsManager.init();
+        
+        //загружаем карту ГеоМиксера
+        L.gmx.loadMap('0EDD4FDB7CC74E46BDAA71B0482D5A74', {
+            leafletMap: map,
+            setZIndex: true,
+            apiKey: 'E5FB6CCB5D23B5E119D2F1B26BCC57BD' //'7B28B42EF910807AA04822E29CFBCC84'
+        }).then(function(gmxMap) {
+            var blm = map.gmxBaseLayersManager;     //менеджер базовых подложек
+
+            //инициализируем подложки из загруженной карты
+            var baseLayers = gmxMap.properties.BaseLayers || ['hybrid', 'map', 'OSM']; //Базовые подложки карты
+            blm.initDefaults().then(function() {
+                blm.setActiveIDs(baseLayers);
+                if (baseLayers.length) blm.setCurrentID(baseLayers[0]);
+            });
+            
+            //устанавливаем контрол слоев ГеоМиксера
+            var myLayersControl = L.control.gmxLayers(blm).addTo(map);
+            //добавляем слои оверлеев в контрол слоев ГеоМиксера
+            for (var title in gmxMap.layersByTitle) {
+                var layer = gmxMap.layersByTitle[title];
+                myLayersControl.addOverlay(layer, title);
+            }
+        });
+
+        // если необходимо свернуть контролы
+        // var hideMe = map.gmxControlIconManager.get('hide');
+        // hideMe.setActive(false);  // Hide controls
+    </script>
+</body>
+</html>

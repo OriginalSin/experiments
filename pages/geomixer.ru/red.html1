@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Организация</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.3.js"></script>
+
+    <script src="http://kosmosnimki.ru/demo/apiv2/leaflet-geomixer-all-src.js?key=7B28B42EF910807AA04822E29CFBCC84"></script>
+    <link rel="stylesheet" href="http://kosmosnimki.ru/demo/apiv2/css/leaflet-geomixer-all.css" />
+
+    <style>
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        var map = new L.Map('map', {layers: [], center: new L.LatLng(59.938081, 30.311214), zoom: 16});
+
+        //window.language = 'eng';  // если необходимо на ангельском
+
+        //через менеджер контролов ГеоМиксера устанавливаем контролы
+        map.gmxControlsManager.init({
+            gmxDrawing: {isVertical: false, isCollapsible: false, isSortable: false},
+            gmxLocation: null
+        });
+        
+        var resLayers = {
+            Point: '1E7BD67A66864BDBA9816547A2E6B145',
+            Polyline: '51EBFE31A8CD40558D04364D0F540C83',
+            Polygon: '4362779175F54D3BA1CF291BEF59DF25'
+        },
+        layersByID = {},
+        prefix = 'http://maps.kosmosnimki.ru/rest/ver1/layers/';
+        
+
+        //добавляем кнопку для сохранения нарисованных объектов
+        map.addControl(new L.Control.gmxIcon({
+            id: 'saveMe',
+            text: 'Сохранить',
+            style: {width: 'auto'},
+            title: 'Сохранить объекты'
+         })
+          .on('click', function (ev) {
+                //console.log('Сохранить', ev);
+                var arr = map.gmxDrawing.getFeatures();
+                if (arr.length < 1) {
+                    alert('Необходимо нарисовать объекты!');
+                } else {
+                    var out = {Point: [], Polyline: [], Polygon: []};
+                    arr.forEach(function (feature) {
+                        var options = feature.options,
+                            geojson = feature.toGeoJSON(),
+                            type = geojson.geometry.type;
+                        out[type].push(geojson);
+                    });
+                    if (out.Point.length && layersByID[resLayers.Point]) {
+                        $.post(prefix + resLayers.Point + '/create', {
+                            features: JSON.stringify(out.Point),
+                            api_key: 'RBWU8L4G00'
+                        }).then(function(res) {
+                            // remove
+                            // arr.forEach(function (feature) {
+                                // var options = feature.options,
+                                    // geojson = feature.toGeoJSON(),
+                                    // type = geojson.geometry.type;
+                                // out[type].push(geojson);
+                            // });
+console.log('Сохранили', res);
+                        });
+                    }
+//resLayers                    
+//https://maps.kosmosnimki.ru/rest/ver1/layers/EB840C54020749339EF7688E3FBD7139/create?features=[{properties:{"SceneID":"AM1_2014_12_12","Sensor":"TERRA"}},{geometry:{"type":"Polygon","coordinates":[[[36,51.5],[36,52],[34,52.5],[36,51.5]]]}}]&api_key=API_KEY
+                    // сохранение
+//https://maps.kosmosnimki.ru/rest/ver1/layers/EB840C54020749339EF7688E3FBD7139/create?feature={properties:{%22SceneID%22:%22AM1_2014_12_12%22,%22Sensor%22:%22TERRA%22},geometry:{%22type%22:%22Polygon%22,%22coordinates%22:%5B%5B%5B36,51.5%5D,%5B36,52%5D,%5B34,52.5%5D,%5B36,51.5%5D%5D%5D}}&api_key=API_KEY                    
+                    // $.post('http://maps.kosmosnimki.ru/rest/ver1/layers/AFCD348333B74AAFA40E8B0A0759B4F7/create', {
+                        // feature: JSON.stringify(geo),
+                        // api_key: 'RBWU8L4G00'
+                    // }).then(function(res) {
+                        
+                    // })
+                    
+                }
+          })
+        );
+        
+        //загружаем карту ГеоМиксера
+        L.gmx.loadMap('9755BFA22C494BA1A51B7D6A31EC3AC9', {
+            leafletMap: map,
+            setZIndex: true,
+            apiKey: 'E5FB6CCB5D23B5E119D2F1B26BCC57BD' //'7B28B42EF910807AA04822E29CFBCC84'
+        }).then(function(gmxMap) {
+            layersByID = gmxMap.layersByID;
+            var blm = map.gmxBaseLayersManager;     //менеджер базовых подложек
+            blm.initDefaults().then(function() {
+                blm.setActiveIDs(['satellite']).setCurrentID('satellite');
+            });
+        });
+    </script>
+</body>
+</html>

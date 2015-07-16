@@ -1,0 +1,178 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<title>GeoMixer Vector Layer Animation</title>
+	<meta charset="utf-8" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0px;
+        }
+		
+        #controls {
+            position: absolute;
+			left: 54px;
+			top: 11px;
+			z-index: 1;
+			background-color: #ffffff;
+			padding: 13px 15px 13px 13px;
+			border-radius: 5px;
+            box-shadow: 0 1px 7px rgba(0,0,0,0.65);
+        }
+        
+        #title {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+		
+		#slider {
+			width: 300px;
+		}
+		#timeInfo {
+			text-align: center;
+			padding-top: 12px;
+		}
+    </style>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+    
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet-src.js"></script>
+	<script src="http://scanex.github.io/Leaflet-GeoMixer/build/leaflet-geomixer-dev.js?key=U92596WMIH"></script>
+
+	<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+	<link rel="stylesheet" href="../dist/MarkerCluster.css" />
+	<link rel="stylesheet" href="../dist/MarkerCluster.Default.css" />
+	<script src="../dist/leaflet.markercluster-src.js"></script>
+</head>
+<body>
+	<div id="controls">
+        <div id="title">NASA FIRMS Hotspots clusters</div>
+		<div id="slider"></div>
+		<div id="timeInfo">Loading data...</div>
+	</div>
+
+	<div id="map" style="width: 100%; height: 100%"></div>
+	
+	<script>
+		var map = L.map('map').setView([31, 13.5], 3);
+
+		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+			maxZoom: 18,
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'
+		}).addTo(map);
+		
+		var updateInfo = function(currentDate) {
+			var zz = function(x) { return x < 10 ? "0" + x : x}
+			var dateStr = zz(currentDate.getUTCDate()) + '.' + zz(currentDate.getUTCMonth() + 1) + '.' + zz(currentDate.getUTCFullYear());
+			document.getElementById('timeInfo').innerHTML = dateStr;
+		}
+		
+		var startDate = new Date('2013/11/01'),
+            oneDay = 1000*60*60*24,	// milliseconds in one day
+            now = startDate.getTime(),
+            ddt1 = new Date( now - now % oneDay), //beginning of the UTC day
+            ddt2 = new Date(ddt1.getTime() + 3*oneDay);
+
+		var items = {},
+            markers;
+
+        L.gmx.loadLayer('AZR6A', 'C13B4D9706F7491EBC6DC70DFFA988C0', {
+        }).then(function(hotspotLayer) {
+			hotspotLayer._gmx.dataManager.preloadTiles(ddt1, ddt2).then(function() {
+				updateInfo(new Date(ddt2.valueOf()));
+				//hotspotLayer.addTo(map);
+				$('#slider').slider({
+					min: ddt1.valueOf() + oneDay,
+					max: ddt2.valueOf(),
+					step: oneDay,
+					value: ddt2.valueOf(),
+					slide: function(event, ui) {
+						updateInfo(new Date(ui.value));
+						hotspotLayer.setDateInterval(new Date(ui.value), new Date(ui.value + oneDay));
+						observer.setDateInterval(new Date(ui.value), new Date(ui.value + oneDay));
+					}
+				});
+            var prevMarkers = [],
+                markers;
+            var observer = hotspotLayer.addObserver({
+                callback: function(data) {
+//console.log('data', data);
+var start = Date.now();
+                    //markers.clearLayers();
+                    var arr = [];
+                    for (var i = 0, len = data.added.length; i < len; i++) {
+                        var vectorTileItem = data.added[i],
+                            id = vectorTileItem.id,
+                            marker = items[id];
+                        if (!marker) {
+                            var item = vectorTileItem.properties,
+                                geo = item[item.length - 1],
+                                title = item[0],
+                                parsedStyle = vectorTileItem.item.parsedStyleKeys,
+                                p = geo.coordinates,
+                                latlng = L.Projection.Mercator.unproject({x: p[0], y: p[1]});
+                            marker = new L.Marker(latlng, {
+                                properties: vectorTileItem.properties,
+                                icon: L.icon({
+                                    iconAnchor: [8, 10],
+                                    iconUrl: parsedStyle.iconUrl
+                                })
+                            });
+/*                            
+                            marker.bindPopup('',
+                                {
+                                    autoPan: false,
+                                    properties: vectorTileItem.properties,
+                                    maxWidth: 560
+                                }
+                            );
+                            marker.on('popupopen', function(ev) {
+                                var popup = ev.popup,
+                                    props = L.gmxUtil.getPropertiesHash(popup.options.properties, hotspotLayer._gmx.tileAttributeIndexes),
+                                    container = L.DomUtil.create('div', 'myPopup'),
+                                    prop = L.DomUtil.create('div', 'myName', container)
+                                
+                                var str = '<b>SpotID:</b> ' + props.SpotID;
+                                str += '<br><b>Timestamp:</b> ' + new Date(props.Timestamp * 1000).toLocaleString();
+                                prop.innerHTML = str;
+                                popup.setContent(container);
+                            });
+                            */
+                            items[id] = marker;
+                        }
+                        arr.push(marker);
+                    }
+console.log('len: ', len, Date.now() - start);
+                    markers = new L.MarkerClusterGroup({
+                        spiderfyOnMaxZoom: false,
+                        showCoverageOnHover: false,
+                        // chunkedLoading: true,
+                        // chunkInterval: 1000,
+                        // chunkDelay: 0,
+                        chunkProgress: function(offset, len, timeStamp) {
+                            if (offset === len) {
+console.log('chunkProgress: ', arguments);
+                                prevMarkers.map(function(it) {
+                                    if (it._map) map.removeLayer(it);
+                                });
+                                prevMarkers = [markers];
+                            }
+                        }
+                    });
+                    markers.addLayers(arr);
+                    map.addLayer(markers);
+console.log('markers time: ', Date.now() - start, 'len: ', len);
+                }
+                ,filters: ['styleFilter']
+                ,type: 'resend'
+                ,dateInterval: [ddt2, new Date(ddt2.valueOf() + oneDay)]
+            });
+			});
+            
+        })
+	</script>
+</body>
+</html>
